@@ -98,18 +98,24 @@ app.get('/api/logs', (req, res) => {
             });
         }
             
-        // 按日期倒序，连接ID倒序排序
+        // 按日期和时间倒序排序，最新的在最上面
         logFiles.sort((a, b) => {
-            // 按日期倒序，连接ID倒序
-            const dateA = a.split('-').slice(0, 3).join('-');
-            const dateB = b.split('-').slice(0, 3).join('-');
-            const timeA = parseInt(a.split('-')[3] || 0);
-            const timeB = parseInt(b.split('-')[3] || 0);
+            // 解析完整的日期时间字符串（前6部分：YYYY-MM-DD-HH-mm-ss）
+            const datetimeA = a.split('-').slice(0, 6).join('-');
+            const datetimeB = b.split('-').slice(0, 6).join('-');
             
-            if (dateB !== dateA) {
-                return new Date(dateB) - new Date(dateA);
+            // 按完整日期时间倒序排序
+            const dateTimeA = new Date(datetimeA.replace(/-(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3'));
+            const dateTimeB = new Date(datetimeB.replace(/-(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3'));
+            
+            if (dateTimeB.getTime() !== dateTimeA.getTime()) {
+                return dateTimeB - dateTimeA;
             }
-            return timeB - timeA;
+            
+            // 如果日期时间相同，按连接ID倒序排序
+            const idA = a.split('-').slice(6).join('-');
+            const idB = b.split('-').slice(6).join('-');
+            return idB.localeCompare(idA);
         });
         
         // 获取所有唯一的日期，用于日期选择器
@@ -227,6 +233,12 @@ app.get('/api/logs', (req, res) => {
             font-size: 16px;
         }
         
+        .log-time {
+            color: #4CAF50;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
         .log-info {
             color: #aaa;
             font-size: 14px;
@@ -303,15 +315,17 @@ app.get('/api/logs', (req, res) => {
         
         <div class="log-list">
             ${logFiles.length > 0 ? logFiles.map(file => {
-                // 解析文件名，提取日期和连接ID
+                // 解析文件名，提取日期、时间和连接ID
                 const parts = file.split('.')[0].split('-');
                 const dateStr = parts.slice(0, 3).join('-');
-                const connectionId = parts.slice(3).join('-') || 'default';
+                const timeStr = parts.slice(3, 6).join(':');
+                const connectionId = parts.slice(6).join('-') || 'default';
                 
                 return `
                     <div class="log-item">
                         <div>
                             <div class="log-date">${dateStr}</div>
+                            <div class="log-time">${timeStr}</div>
                             <div class="log-info">连接ID: ${connectionId}</div>
                         </div>
                         <a href="/api/logs/${file}" class="view-button">查看</a>
@@ -369,7 +383,9 @@ app.get('/api/logs/:filename', (req, res) => {
         }
         
         const logContent = fs.readFileSync(logPath, 'utf8');
-        const logEntries = logContent.trim().split('\n').map(line => JSON.parse(line));
+        const logEntries = logContent.trim().split('\n')
+            .map(line => JSON.parse(line))
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // 按时间戳倒序排序，最新的在最上面
         
         // 生成HTML页面
         const html = `
@@ -498,7 +514,7 @@ app.get('/api/logs/:filename', (req, res) => {
         <div class="log-container">
             ${logEntries.length > 0 ? logEntries.map((entry, index) => `
                 <div class="log-entry">
-                    <div class="log-timestamp">${new Date(entry.timestamp).toLocaleString('zh-CN')}</div>
+                    <div class="log-timestamp">${new Date(entry.timestamp).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
                     <div class="log-user">
                         <div class="log-label">用户:</div>
                         <div>${entry.user}</div>
@@ -551,7 +567,15 @@ wss.on('connection', (ws) => {
     // 为新连接生成唯一ID
     const connectionId = generateConnectionId();
     const timestamp = new Date();
-    const dateStr = timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // 构建包含年月日时分秒的字符串：YYYY-MM-DD-HH-mm-ss
+    const year = timestamp.getFullYear();
+    const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+    const day = String(timestamp.getDate()).padStart(2, '0');
+    const hours = String(timestamp.getHours()).padStart(2, '0');
+    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+    const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
     
     // 创建连接专用的日志文件路径
     const logFileName = path.join(logsDir, `${dateStr}-${connectionId}.log`);
