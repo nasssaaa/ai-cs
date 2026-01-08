@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志查看器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4CAF50;
+        }
+        
+        .log-selector {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .log-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        #log-file-select {
+            width: 100%;
+            padding: 10px;
+            background-color: #555;
+            color: #ffffff;
+            border: 1px solid #777;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .log-content {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background-color: #333;
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        .log-timestamp {
+            font-style: italic;
+        }
+        
+        .log-message {
+            margin-bottom: 10px;
+        }
+        
+        .log-user {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .log-ai {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        
+        .log-content pre {
+            background-color: #444;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">← 返回聊天界面</a>
+        <h1>AI聊天日志查看器</h1>
+        
+        <div class="log-selector">
+            <label for="log-file-select">选择日志文件:</label>
+            <select id="log-file-select" onchange="loadLogFile()">
+                <option value="">加载中...</option>
+            </select>
+        </div>
+        
+        <div class="log-content" id="log-content">
+            <p>请选择一个日志文件查看内容</p>
+        </div>
+    </div>
+    
+    <script>
+        // 加载日志文件列表
+        async function loadLogFiles() {
+            const select = document.getElementById('log-file-select');
+            select.innerHTML = '<option value="">加载中...</option>';
+            
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                
+                if (data.success) {
+                    select.innerHTML = '';
+                    if (data.logs.length === 0) {
+                        select.innerHTML = '<option value="">暂无日志文件</option>';
+                    } else {
+                        data.logs.forEach(log => {
+                            const option = document.createElement('option');
+                            option.value = log.filename;
+                            option.textContent = log.date;
+                            select.appendChild(option);
+                        });
+                    }
+                } else {
+                    select.innerHTML = '<option value="">加载失败</option>';
+                }
+            } catch (error) {
+                console.error('加载日志文件列表失败:', error);
+                select.innerHTML = '<option value="">加载失败</option>';
+            }
+        }
+        
+        // 加载选中的日志文件内容
+        async function loadLogFile() {
+            const select = document.getElementById('log-file-select');
+            const filename = select.value;
+            const logContent = document.getElementById('log-content');
+            
+            if (!filename) {
+                logContent.innerHTML = '<p>请选择一个日志文件查看内容</p>';
+                return;
+            }
+            
+            logContent.innerHTML = '<p>加载中...</p>';
+            
+            try {
+                const response = await fetch(`/api/logs/${filename}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.entries.length === 0) {
+                        logContent.innerHTML = '<p>该日志文件为空</p>';
+                    } else {
+                        const entriesHTML = data.entries.map(entry => {
+                            const date = new Date(entry.timestamp);
+                            const localTime = date.toLocaleString('zh-CN');
+                            
+                            return `
+                                <div class="log-entry">
+                                    <div class="log-header">
+                                        <div class="log-timestamp">${localTime}</div>
+                                    </div>
+                                    <div class="log-message">
+                                        <div class="log-user">用户:</div>
+                                        <pre>${entry.user}</pre>
+                                    </div>
+                                    <div class="log-message">
+                                        <div class="log-ai">AI:</div>
+                                        <pre>${entry.ai}</pre>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        logContent.innerHTML = entriesHTML;
+                    }
+                } else {
+                    logContent.innerHTML = `<p>加载失败: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('加载日志内容失败:', error);
+                logContent.innerHTML = '<p>加载日志内容失败</p>';
+            }
+        }
+        
+        // 页面加载时加载日志文件列表
+        window.addEventListener('DOMContentLoaded', loadLogFiles);
+    </script>
+</body>
+</html>
