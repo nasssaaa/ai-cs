@@ -616,7 +616,7 @@ wss.on('connection', (ws) => {
                 
                 // 调用OpenAI API
                 const completion = await openai.chat.completions.create({
-                    model: "qwen-long-latest",
+                    model: "qwen-max",
                     messages: [
                         {
                             role: "system",
