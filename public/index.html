@@ -59,102 +59,6 @@
             border-color: rgba(255, 255, 255, 0.4);
         }
         
-        /* 调试面板样式 */
-        .debug-toggle {
-            position: fixed;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            background-color: rgba(255, 165, 0, 0.8);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: grab;
-            font-size: 20px;
-            z-index: 1000;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        
-        .debug-toggle:hover {
-            background-color: rgba(255, 165, 0, 1);
-            transform: translateY(-50%) scale(1.1);
-        }
-        
-        .debug-toggle.dragging {
-            cursor: grabbing;
-            z-index: 1001;
-        }
-        
-        .debug-panel {
-            position: fixed;
-            top: 50%;
-            right: 80px;
-            transform: translateY(-50%);
-            width: 300px;
-            background-color: #333;
-            border: 2px solid #555;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 999;
-        }
-        
-        .debug-panel.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .debug-panel h3 {
-            color: #ffffff;
-            margin: 0 0 15px 0;
-            font-size: 16px;
-            border-bottom: 1px solid #555;
-            padding-bottom: 5px;
-        }
-        
-        .debug-button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 12px;
-            width: 100%;
-            margin-bottom: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .debug-button:hover {
-            background-color: #45a049;
-        }
-        
-        .debug-button:disabled {
-            background-color: #666;
-            cursor: not-allowed;
-        }
-        
-        .debug-status {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 5px;
-            min-height: 20px;
-        }
-        
-        .debug-status.success {
-            color: #4CAF50;
-        }
-        
-        .debug-status.error {
-            color: #f44336;
-        }
-        
         .chat-messages {
             flex: 1;
             padding: 20px;
@@ -278,25 +182,11 @@
         </div>
     </div>
     
-    <!-- 调试面板 -->
-    <button id="debug-toggle" class="debug-toggle" title="调试面板">⚙️</button>
-    <div id="debug-panel" class="debug-panel">
-        <h3>🔧 调试面板</h3>
-        <button id="reload-prompt-btn" class="debug-button">🔄 更新提示词</button>
-        <div id="debug-status" class="debug-status"></div>
-    </div>
-    
     <script>
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
         const chatMessages = document.getElementById('chat-messages');
         const clearButton = document.getElementById('clear-button');
-        
-        // 调试面板相关元素
-        const debugToggle = document.getElementById('debug-toggle');
-        const debugPanel = document.getElementById('debug-panel');
-        const reloadPromptBtn = document.getElementById('reload-prompt-btn');
-        const debugStatus = document.getElementById('debug-status');
         
         // WebSocket连接
         let ws;
@@ -359,159 +249,13 @@
                     removeThinkingMessage(thinkingElement);
                     displayMessage(content, 'ai');
                     break;
-                case 'reload-prompt':
-                    if (content.success) {
-                        debugStatus.textContent = content.message;
-                        debugStatus.className = 'debug-status success';
-                    } else {
-                        debugStatus.textContent = content.message;
-                        debugStatus.className = 'debug-status error';
-                    }
-                    break;
                 default:
                     console.log('未知的消息类型:', type);
             }
         }
         
-        // 调试面板控制
-        let debugPanelVisible = false;
         // 思考中消息元素（全局变量）
         let thinkingElement;
-        
-        // 初始化拖拽样式
-        debugToggle.style.cursor = 'grab';
-        
-        // 拖拽功能
-        let isDragging = false;
-        let dragStartX, dragStartY, initialX, initialY;
-        let isClick = false;
-        let totalDragDistance = 0;
-        
-        debugToggle.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            isClick = true;
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            totalDragDistance = 0;
-            
-            // 获取当前按钮位置（使用getBoundingClientRect）
-            const rect = debugToggle.getBoundingClientRect();
-            initialX = rect.left;
-            initialY = rect.top;
-            
-            // 添加拖拽样式
-            debugToggle.classList.add('dragging');
-            debugToggle.style.transition = 'none';
-            
-            // 防止文本选择
-            e.preventDefault();
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            
-            e.preventDefault();
-            
-            const deltaX = e.clientX - dragStartX;
-            const deltaY = e.clientY - dragStartY;
-            const currentDragDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            
-            // 如果移动距离超过5px，认为是拖拽而不是点击
-            if (currentDragDistance > 5) {
-                isClick = false;
-            }
-            
-            totalDragDistance = currentDragDistance;
-            
-            const newX = initialX + deltaX;
-            const newY = initialY + deltaY;
-            
-            // 限制在页面边界内
-            const buttonWidth = debugToggle.offsetWidth;
-            const buttonHeight = debugToggle.offsetHeight;
-            const maxX = window.innerWidth - buttonWidth - 10;
-            const maxY = window.innerHeight - buttonHeight - 10;
-            const minX = 10;
-            const minY = 10;
-            
-            const constrainedX = Math.max(minX, Math.min(maxX, newX));
-            const constrainedY = Math.max(minY, Math.min(maxY, newY));
-            
-            // 设置新位置
-            debugToggle.style.left = constrainedX + 'px';
-            debugToggle.style.top = constrainedY + 'px';
-            debugToggle.style.right = 'auto';
-            debugToggle.style.bottom = 'auto';
-            debugToggle.style.transform = 'none';
-        });
-        
-        document.addEventListener('mouseup', (e) => {
-            if (!isDragging) return;
-            
-            isDragging = false;
-            debugToggle.classList.remove('dragging');
-            debugToggle.style.transition = 'all 0.3s ease';
-            
-            // 如果移动距离很小认为是点击，则切换面板
-            if (isClick && totalDragDistance < 5) {
-                debugPanelVisible = !debugPanelVisible;
-                if (debugPanelVisible) {
-                    // 更新面板位置并显示
-                    updateDebugPanelPosition();
-                    debugPanel.classList.add('visible');
-                } else {
-                    debugPanel.classList.remove('visible');
-                }
-            } else {
-                // 拖拽操作后调整调试面板位置
-                updateDebugPanelPosition();
-            }
-        });
-        
-        // 更新调试面板位置以跟随按钮
-        function updateDebugPanelPosition() {
-            const buttonRect = debugToggle.getBoundingClientRect();
-            const panelLeft = Math.max(10, buttonRect.left - 280); // 面板宽度300，向左偏移280
-            const panelTop = Math.max(10, buttonRect.top + (buttonRect.height / 2) - 75); // 面板高度约150，垂直居中
-            
-            debugPanel.style.left = panelLeft + 'px';
-            debugPanel.style.top = panelTop + 'px';
-            debugPanel.style.right = 'auto';
-            debugPanel.style.bottom = 'auto';
-        }
-        
-        // 更新提示词功能
-        async function reloadPrompt() {
-            reloadPromptBtn.disabled = true;
-            reloadPromptBtn.textContent = '🔄 更新中...';
-            debugStatus.textContent = '正在更新提示词...';
-            debugStatus.className = 'debug-status';
-            
-            try {
-                if (!isWsConnected) {
-                    throw new Error('WebSocket连接未建立');
-                }
-                
-                // 使用WebSocket发送更新提示词请求
-                ws.send(JSON.stringify({ type: 'reload-prompt' }));
-            } catch (error) {
-                console.error('更新提示词失败:', error);
-                debugStatus.textContent = '操作失败: ' + error.message;
-                debugStatus.className = 'debug-status error';
-                
-                reloadPromptBtn.disabled = false;
-                reloadPromptBtn.textContent = '🔄 更新提示词';
-                
-                // 3秒后清除状态信息
-                setTimeout(() => {
-                    debugStatus.textContent = '';
-                    debugStatus.className = 'debug-status';
-                }, 3000);
-            }
-        }
-        
-        // 重新读取prompt按钮事件监听
-        reloadPromptBtn.addEventListener('click', reloadPrompt);
         
         // 清除聊天记录
         function clearChat() {

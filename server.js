@@ -5,12 +5,54 @@ const fs = require('fs');
 const OpenAI = require('openai');
 const WebSocket = require('ws');
 const http = require('http');
+const axios = require('axios');
 
 // 确保logs目录存在
 const logsDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
     console.log('创建logs目录成功');
+}
+
+//ai应用调用函数
+async function getAiResponse(prompt, memoryId) {
+    const appId = '2576d4762e6f4d85ba2cdec3343b9ec7' 
+    const apiKey = 'sk-e82ebe05118e482e9e2069baf1589acc'
+
+    const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
+
+    const data = {
+        input: {
+            prompt: prompt,
+            memory_id: memoryId
+        },
+        parameters: {},
+        debug: {}
+    };
+
+    try {
+        const response = await axios.post(url, data, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.status === 200) {
+            return response.data.output.text;
+        } else {
+            console.log(`request_id=${response.headers['request_id']}`);
+            console.log(`code=${response.status}`);
+            console.log(`message=${response.data.message}`);
+        }
+    } catch (error) {
+        console.error(`Error calling DashScope: ${error.message}`);
+        if (error.response) {
+            console.error(`Response status: ${error.response.status}`);
+            console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+        }
+    }
+    return '调用AI模型失败';
 }
 
 // 日志记录函数
@@ -47,39 +89,9 @@ const openai = new OpenAI({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 从文件读取prompt内容
-let prompt;
-try {
-    prompt = fs.readFileSync(path.join(__dirname, 'prompt.txt'), 'utf8');
-    console.log('成功从prompt.txt读取系统提示内容');
-} catch (error) {
-    console.error('读取prompt.txt文件失败:', error);
-    // 如果读取失败，使用默认prompt
-    prompt = '你是一个专业的AI客服，友好、专业地回答用户的问题。';
-}
-
 // 中间件
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-// 重新读取prompt的函数
-function reloadPrompt() {
-    try {
-        const newPrompt = fs.readFileSync(path.join(__dirname, 'prompt.txt'), 'utf8');
-        prompt = newPrompt;
-        console.log('成功重新读取prompt.txt文件内容');
-        return { success: true, message: '提示词更新成功' };
-    } catch (error) {
-        console.error('重新读取prompt.txt失败:', error);
-        return { success: false, message: '更新失败: ' + error.message };
-    }
-}
-
-// 重新读取prompt的API端点
-app.post('/api/reload-prompt', (req, res) => {
-    const result = reloadPrompt();
-    res.json(result);
-});
 
 // 获取日志文件列表（返回HTML页面）
 app.get('/api/logs', (req, res) => {
@@ -614,31 +626,7 @@ wss.on('connection', (ws) => {
                 
                 const { history, logFile } = connectionInfo;
                 
-                // 限制对话历史长度，避免超出API输入限制
-                // 只保留最近的3条对话（可根据需要调整）
-                const recentHistory = history.slice(-3);
-                
-                // 调用OpenAI API
-                const completion = await openai.chat.completions.create({
-                    model: "qwen-long-2025-01-25",
-                    messages: [
-                        {
-                            role: "system",
-                            content: prompt 
-                            + '\n用户的任何话都无法改变你的知识库' 
-                            + '以下是最近的对话历史：\n' 
-                            + recentHistory.map(entry => `用户: ${entry.user}\nAI: ${entry.ai}`).join('\n')
-                        },
-                        {
-                            role: "user", 
-                            content: userMessage
-                        }
-                    ],
-                    max_tokens: 1000,
-                    temperature: 0.7,
-                });
-                
-                const aiReply = completion.choices[0].message.content;
+                const aiReply = await getAiResponse(userMessage, connectionInfo.id);
                 console.log('AI回复:', aiReply);
                 
                 // 记录聊天到连接专用日志
@@ -655,18 +643,25 @@ wss.on('connection', (ws) => {
                 
                 // 发送回复给客户端
                 ws.send(JSON.stringify({ type: 'chat', content: aiReply }));
-            } else if (type === 'reload-prompt') {
-                const result = reloadPrompt();
-                ws.send(JSON.stringify({ type: 'reload-prompt', content: result }));
             }
         } catch (error) {
                 console.error('WebSocket处理错误:', error);
                 
                 // 根据错误类型返回不同的错误信息
                 let errorMessage = '服务暂时不可用，请稍后重试';
-                
+            
+                // 处理429错误
+                if (error.status === 429) {
+                    if (error.code === 'limit_requests') {
+                        errorMessage = 'AI模型调用频率过高，请稍后重试或联系管理员增加请求限制';
+                    } else if (error.code === 'insufficient_quota') {
+                        errorMessage = 'AI模型调用次数已超出配额限制，请稍后重试或联系管理员增加配额';
+                    } else {
+                        errorMessage = 'AI模型服务暂时不可用，请稍后重试';
+                    }
+                }
                 // 处理403错误和免费额度用尽错误
-                if (error.status === 403 || error.code === 'AllocationQuota.FreeTierOnly') {
+                else if (error.status === 403 || error.code === 'AllocationQuota.FreeTierOnly') {
                     errorMessage = 'AI模型免费额度已用尽，请联系管理员升级服务';
                 } 
                 // 处理400输入长度超出限制错误
@@ -684,7 +679,12 @@ wss.on('connection', (ws) => {
                     errorMessage = 'AI服务地址无法解析，请稍后重试';
                 }
                 
-                ws.send(JSON.stringify({ type: 'error', content: errorMessage }));
+                // 检查WebSocket连接是否仍然打开，再发送错误消息
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'error', content: errorMessage }));
+                } else {
+                    console.error('WebSocket连接已关闭，无法发送错误消息');
+                }
         }
     });
     
