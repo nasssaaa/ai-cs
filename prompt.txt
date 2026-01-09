@@ -168,59 +168,305 @@ AF014	售后/维修	维修多久会通知	修好了会通知吗|维修好了会�
 AF015	售后/维修	维修时长-掉钻/改长度	掉钻维修多久|掉钻要多久|改长度要多久	亲～一般参考：掉钻维修约1周；改长度约2-3周（涉及金重变化会更细致）。具体以实际返厂进度为准哦～	是否掉钻/改长度|是否18K	
 AF016	售后/争议	回收重量对不上	回收重量对不上|卖料克重不对|回收少了|重量不一致	亲～麻烦您找人工客服提供回收时的上称照片/视频，以及过程视频，我们这边会尽快核对处理～加急通道也可以拨打：15302797227～	上称照片/视频|过程视频	必须人工核对
 
-INTENT_MAP	intent_name	trigger_keywords	required_slots	optional_slots	slot_questions_short	answer_strategy_short	short_response_template
-IM01	解释存料/旧料/金条板料	存料|旧料|金条|板料|以旧换新	none	none	您是存料金条板料还是存料旧料？	给定义+差异（旧料+2）	存料=系统里有料换款；金条板料可直接做；旧料需提纯，所以旧料在基础工费上+2元/克。
-IM02	解释计价公式	怎么算|计价|公式|工费规则|+1|+2	none	none	做哪款+多少克+金条板料/旧料+按时到料/后寄料+是否亮面？	给公式（元/克+总工费）	工费(元/克)=基础+(旧料+2)+(后寄料+1)+(亮面+1[仅可选亮面款])；总工费=克重×工费+附加。
-IM03	问某款多少钱一克(工费)	多少钱一克|几工|工费多少|基础工费	style	material_type,timing,finish,inner_text,option	请确认：金条板料/旧料？按时到料还是后寄料？可选亮面款要不要亮面？（轮胎/泥鳅背是否加内百福/心经？钻款是否满钻/半圈？）	按规则算元/克并给一句组合提示	{style}：{rate}元/克（{breakdown}）。
-IM04	问总工费(给克重)	总工费|一共工费|xx克工费	style,weight	material_type,timing,finish,inner_text,option	请确认：金条板料/旧料？按时到料/后寄料？亮面？内百福/心经？满钻/半圈？	先算元/克再乘克重+附加	{style}：{rate}元/克；{weight}g总工费={total}元（含附加{addon}）。
-IM05	问亮面能不能做/要不要加价	亮面|镜面|抛光|能做亮面吗	style	finish	您这款是要亮面吗？	按BRIGHT_POLICY返回：可选+1/已亮面/无亮面	{style}亮面规则：{bright_text}。
-IM06	问内百福/内心经	内百福|内心经|加字|内壁字	style	inner_text	要加内百福还是内心经？	说明是同一款的升级版+基础工费不同	{style}可加内百福/内心经；加字后按对应基础工费计价。
-IM07	问圈口/卡几能做范围	圈口范围|能做多大|卡几范围|面宽范围	style	none	您做哪一款？	输出圈口范围+可做卡位/面宽	{style}圈口范围{circle_range}；面宽/卡位见标准表。
-IM08	圈口+卡几/面宽→估克重	多少克|克重|要几克	style,width,circle	none	—	查表返回区间克重	{style}{circle}圈口做{width}：约{weight_range}g（参考区间）。
-IM09	克重→能做多宽(卡几)	能做卡几|做多宽|面宽多少	style,weight,circle	none	—	按表匹配档位（给最接近档）	{style}{weight}g更接近{width_suggest}（参考）。
-IM10	问附加多少钱(钻/莫桑)	附加|莫桑附加|满钻|半圈钻	style	option	满钻还是半圈钻？	直接报附加（元/件）	{style}附加：{addon_text}。
-IM11	样品克重解释	样品|参考|圈口变大变小	none	none	—	解释样品仅参考	样品克重仅参考：圈口/手围变大克重会上浮，变小会下降；空心款按区间克重为准。
-							
-KB_QA	qa_id	intent_id	style	conditions	question_examples	short_answer	followup_if_missing
-KB_QA	QA0001	IM01	ANY	def_stock	存料是什么意思？|什么叫存料旧料/存料金条板料？	存料=系统里有料换款；金条板料可直接做；旧料需提纯，所以旧料在基础工费上+2元/克。	
-KB_QA	QA0002	IM02	ANY	def_formula	工费怎么算？|+1/+2是什么意思？	工费(元/克)=基础+(旧料+2)+(后寄料+1)+(亮面+1[仅可选亮面款])；总工费=克重×工费+附加。	
-KB_QA	QA0003	IM11	ANY	def_sample	样品克重准吗？|圈口变了克重会变吗？	样品克重仅参考：圈口/手围变大克重会上浮，变小会下降；空心款按区间克重为准。	
-KB_QA	QA0004	IM05	ANY	def_bright	哪些能做亮面？|亮面怎么加？	可选亮面款=在对应工费上+1元/克；“镜面/5G”默认已亮面不加；标注无亮面的款不可选亮面。	
-KB_QA	QA0005	IM06	A_WHEEL	def_inner	轮胎内百福/内心经是什么？|怎么收费？	古法轮胎可加内百福/内心经：基础工费从3.5元/克变为4.5元/克（其余旧料/后寄/亮面规则不变）。	
-KB_QA	QA0006	IM06	B_NIQIU	def_inner	泥鳅背内百福/内心经是什么？|怎么收费？	古法泥鳅背可加内百福/内心经：基础工费从3元/克变为4元/克（其余旧料/后寄/亮面规则不变）。	
-KB_QA	QA_A1	IM03	A_WHEEL	price_combo	古法轮胎(不加字)旧料后寄多少钱一克？|古法轮胎(不加字)板料金条先寄几工？|古法轮胎(不加字)工费组合怎么算？	古法轮胎(不加字)：板料金条先寄3.5/后寄4.5；旧料先寄5.5/后寄6.5；亮面在此基础+1。	
-KB_QA	QA_A2	IM03	A_WHEEL	price_combo	古法轮胎(内百福/内心经)旧料后寄多少钱一克？|古法轮胎(内百福/内心经)板料金条先寄几工？|古法轮胎(内百福/内心经)工费组合怎么算？	古法轮胎(内百福/内心经)：板料金条先寄4.5/后寄5.5；旧料先寄6.5/后寄7.5；亮面在此基础+1。	
-KB_QA	QA_B1	IM03	B_NIQIU	price_combo	古法泥鳅背(不加字)旧料后寄多少钱一克？|古法泥鳅背(不加字)板料金条先寄几工？|古法泥鳅背(不加字)工费组合怎么算？	古法泥鳅背(不加字)：板料金条先寄3/后寄4；旧料先寄5/后寄6；亮面在此基础+1。	
-KB_QA	QA_B2	IM03	B_NIQIU	price_combo	古法泥鳅背(内百福/内心经)旧料后寄多少钱一克？|古法泥鳅背(内百福/内心经)板料金条先寄几工？|古法泥鳅背(内百福/内心经)工费组合怎么算？	古法泥鳅背(内百福/内心经)：板料金条先寄4/后寄5；旧料先寄6/后寄7；亮面在此基础+1。	
-KB_QA	QA_C1	IM03	C_ROUND	price_combo	圆棍/素圈空心(20g起)旧料后寄多少钱一克？|圆棍/素圈空心(20g起)板料金条先寄几工？|圆棍/素圈空心(20g起)工费组合怎么算？	圆棍/素圈空心(20g起)：板料金条先寄2/后寄3；旧料先寄4/后寄5；亮面在此基础+1；20g起按2元/克。	
-KB_QA	QA_C2	IM03	C_ROUND	price_combo	圆棍/素圈空心(小克重约15g)旧料后寄多少钱一克？|圆棍/素圈空心(小克重约15g)板料金条先寄几工？|圆棍/素圈空心(小克重约15g)工费组合怎么算？	圆棍/素圈空心(小克重约15g)：板料金条先寄3/后寄4；旧料先寄5/后寄6；亮面在此基础+1；约15g按3元/克。	
-KB_QA	QA_D	IM03	D_SQUARE	price_combo	古法空心方镯旧料后寄多少钱一克？|古法空心方镯板料金条先寄几工？|古法空心方镯工费组合怎么算？	古法空心方镯：板料金条先寄5/后寄6；旧料先寄7/后寄8；亮面在此基础+1。	
-KB_QA	QA_E	IM03	E_SOLID_BAIFU	price_combo	古法实心百福(满镶)旧料后寄多少钱一克？|古法实心百福(满镶)板料金条先寄几工？|古法实心百福(满镶)工费组合怎么算？	古法实心百福(满镶)：板料金条先寄15/后寄16；旧料先寄17/后寄18；亮面在此基础+1；莫桑免附加。	
-KB_QA	QA_F	IM03	F_JUANCAO	price_combo	卷草纹手镯旧料后寄多少钱一克？|卷草纹手镯板料金条先寄几工？|卷草纹手镯工费组合怎么算？	卷草纹手镯：板料金条先寄8/后寄9；旧料先寄10/后寄11；无亮面。	
-KB_QA	QA_G	IM03	G_HAND_BRUSH	price_combo	高级手工拉丝素圈旧料后寄多少钱一克？|高级手工拉丝素圈板料金条先寄几工？|高级手工拉丝素圈工费组合怎么算？	高级手工拉丝素圈：板料金条先寄10/后寄11；旧料先寄12/后寄13；无亮面。	
-KB_QA	QA_H	IM03	H_MIRROR_WAVE	price_combo	镜面金水波纹旧料后寄多少钱一克？|镜面金水波纹板料金条先寄几工？|镜面金水波纹工费组合怎么算？	镜面金水波纹：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_I	IM03	I_SILK	price_combo	金丝锦织手镯旧料后寄多少钱一克？|金丝锦织手镯板料金条先寄几工？|金丝锦织手镯工费组合怎么算？	金丝锦织手镯：板料金条先寄11/后寄12；旧料先寄13/后寄14；无亮面。	
-KB_QA	QA_J	IM03	J_LIUZHI_GUFEI	price_combo	鎏枝映月开口贵妃(有钻)旧料后寄多少钱一克？|鎏枝映月开口贵妃(有钻)板料金条先寄几工？|鎏枝映月开口贵妃(有钻)工费组合怎么算？	鎏枝映月开口贵妃(有钻)：板料金条先寄11/后寄12；旧料先寄13/后寄14；无亮面。	
-KB_QA	QA_K	IM03	K_LACE_CROWN	price_combo	蕾丝桂冠(有钻)旧料后寄多少钱一克？|蕾丝桂冠(有钻)板料金条先寄几工？|蕾丝桂冠(有钻)工费组合怎么算？	蕾丝桂冠(有钻)：板料金条先寄15/后寄16；旧料先寄17/后寄18；无亮面；附加88元/件。	
-KB_QA	QA_L	IM03	L_WANRONG	price_combo	婉容手镯旧料后寄多少钱一克？|婉容手镯板料金条先寄几工？|婉容手镯工费组合怎么算？	婉容手镯：板料金条先寄8/后寄9；旧料先寄10/后寄11；亮面在此基础+1。	
-KB_QA	QA_M	IM03	M_5G_MOBIUS_FINE	price_combo	5G点钻莫比乌斯细旧料后寄多少钱一克？|5G点钻莫比乌斯细板料金条先寄几工？|5G点钻莫比乌斯细工费组合怎么算？	5G点钻莫比乌斯细：板料金条先寄18/后寄19；旧料先寄20/后寄21；已亮面；附加25元/件。	
-KB_QA	QA_N	IM03	N_5G_MOBIUS_COARSE	price_combo	5G点钻莫比乌斯粗旧料后寄多少钱一克？|5G点钻莫比乌斯粗板料金条先寄几工？|5G点钻莫比乌斯粗工费组合怎么算？	5G点钻莫比乌斯粗：板料金条先寄18/后寄19；旧料先寄20/后寄21；已亮面；附加150元/件。	
-KB_QA	QA_O	IM03	O_5G_HALF_CHAIN	price_combo	5G方钻半镯链旧料后寄多少钱一克？|5G方钻半镯链板料金条先寄几工？|5G方钻半镯链工费组合怎么算？	5G方钻半镯链：板料金条先寄18/后寄19；旧料先寄20/后寄21；已亮面；附加160元/件。	
-KB_QA	QA_P	IM03	P_5G_GUFEI_DIAM	price_combo	5G卡扣方钻贵妃旧料后寄多少钱一克？|5G卡扣方钻贵妃板料金条先寄几工？|5G卡扣方钻贵妃工费组合怎么算？	5G卡扣方钻贵妃：板料金条先寄18/后寄19；旧料先寄20/后寄21；已亮面；附加：满钻320元/件，半圈钻170元/件。	
-KB_QA	QA_Q	IM03	Q_MIRROR_DRAGON	price_combo	镜面金龙鳞旧料后寄多少钱一克？|镜面金龙鳞板料金条先寄几工？|镜面金龙鳞工费组合怎么算？	镜面金龙鳞：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_R	IM03	R_MIRROR_ICE	price_combo	镜面金冰块旧料后寄多少钱一克？|镜面金冰块板料金条先寄几工？|镜面金冰块工费组合怎么算？	镜面金冰块：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_S	IM03	S_MIRROR_RIPPLE	price_combo	镜面金波光粼粼旧料后寄多少钱一克？|镜面金波光粼粼板料金条先寄几工？|镜面金波光粼粼工费组合怎么算？	镜面金波光粼粼：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_T	IM03	T_MIRROR_HONEY	price_combo	镜面蜂巢旧料后寄多少钱一克？|镜面蜂巢板料金条先寄几工？|镜面蜂巢工费组合怎么算？	镜面蜂巢：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_U	IM03	U_SNAKE	price_combo	蛇镯旧料后寄多少钱一克？|蛇镯板料金条先寄几工？|蛇镯工费组合怎么算？	蛇镯：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_V	IM03	V_LOTUS_TRI	price_combo	荷叶三角旧料后寄多少钱一克？|荷叶三角板料金条先寄几工？|荷叶三角工费组合怎么算？	荷叶三角：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_W	IM03	W_MI	price_combo	米字卡镯旧料后寄多少钱一克？|米字卡镯板料金条先寄几工？|米字卡镯工费组合怎么算？	米字卡镯：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_X	IM03	X_BROKEN_GOLD	price_combo	碎金万两旧料后寄多少钱一克？|碎金万两板料金条先寄几工？|碎金万两工费组合怎么算？	碎金万两：板料金条先寄10/后寄11；旧料先寄12/后寄13；已亮面。	
-KB_QA	QA_Y	IM03	Y_TWIST_CHAIN	price_combo	麻花蕾丝镯链旧料后寄多少钱一克？|麻花蕾丝镯链板料金条先寄几工？|麻花蕾丝镯链工费组合怎么算？	麻花蕾丝镯链：板料金条先寄18/后寄19；旧料先寄20/后寄21；无亮面；附加190元/件；可定13+2/14.5+2/15+2。	
-KB_QA	QA_Z	IM03	Z_OPEN_GUFEI_MOSAN_NQ	price_combo	开口贵妃莫桑泥鳅背旧料后寄多少钱一克？|开口贵妃莫桑泥鳅背板料金条先寄几工？|开口贵妃莫桑泥鳅背工费组合怎么算？	开口贵妃莫桑泥鳅背：板料金条先寄12/后寄13；旧料先寄14/后寄15；亮面在此基础+1；尺寸人工定制。	
-KB_QA	QA_ADD_P	IM10	P_5G_GUFEI_DIAM	addon	方钻贵妃满钻/半圈附加多少？|卡扣方钻贵妃附加怎么算？	5G卡扣方钻贵妃：满钻附加320元/件；半圈钻附加170元/件。	
-KB_QA	QA_ADD_K	IM10	K_LACE_CROWN	addon	蕾丝桂冠附加多少？	蕾丝桂冠：附加88元/件。	
-KB_QA	QA_ADD_M	IM10	M_5G_MOBIUS_FINE	addon	莫比乌斯细附加多少？	5G点钻莫比乌斯细：附加25元/件。	
-KB_QA	QA_ADD_N	IM10	N_5G_MOBIUS_COARSE	addon	莫比乌斯粗附加多少？	5G点钻莫比乌斯粗：附加150元/件。	
-KB_QA	QA_ADD_O	IM10	O_5G_HALF_CHAIN	addon	方钻半镯链附加多少？	5G方钻半镯链：附加160元/件。	
-KB_QA	QA_ADD_Y	IM10	Y_TWIST_CHAIN	addon	麻花蕾丝镯链附加多少？|麻花蕾丝镯链能做多长？	麻花蕾丝镯链：附加190元/件；可定13+2/14.5+2/15+2（长度备注）。	
+INTENT_MAP	intent_id	intent_name	trigger_keywords	required_slots	optional_slots	slot_questions_short	short_response_template
+INTENT_MAP	I_FEE_BASE	问某款工费（默认存料板料金条）	工费|几工|多少钱一克|每克多少钱	style	none	—	{answer}
+INTENT_MAP	I_FEE_COMBO	问指定条件工费（旧料/后寄/亮面）	旧料|以旧换新|后寄|出货后|亮面	style+material+timing(+finish)	none	—	{rate}元/克
+INTENT_MAP	I_W2G	卡几/面宽→克重	卡.*多少克|面宽.*多少克|卡.*克重	style+width	circle(optional)	—	{weight_range}g
+INTENT_MAP	I_G2W	克重→卡几/面宽	多少克能做卡几|多少克做多宽|xx克能做卡几	style+weight	circle(optional)	—	{width}
+INTENT_MAP	I_CIRCLE_RANGE	问圈口范围	圈口范围|能做多大圈口|圈口能做多少	style	none	—	{circle_range}
+INTENT_MAP	I_SAMPLE_WEIGHT	问样品克重/尺寸	样品|多少克|克重	style	width(optional)	缺卡几就问卡几	{sample_answer}
+INTENT_MAP	I_ADDON	问附加费	附加|莫桑附加|满钻|半圈钻	style	option	缺选项就问满钻/半圈	{addon}元/件
+INTENT_MAP	I_SIZE_OPTIONS	问可定尺寸（镯链）	能做多长|能定多大|尺寸有哪些	style	none	—	{sizes}
 
+KB_QA	qa_id	intent_id	style	conditions	question_examples	short_answer	followup_if_missing
+KB_QA	QA_DEF_STOCK	I_FEE_BASE	ANY	def_stock	存料是什么意思|什么叫存料	存料=系统存有料换款	
+KB_QA	QA_DEF_OLD	I_FEE_BASE	ANY	def_old	旧料是什么意思|存料旧料是什么意思	旧料=旧款换新料	
+KB_QA	QA_DEF_NEW	I_FEE_BASE	ANY	def_new	金条板料是什么意思|存料金条板料是什么意思	金条/板料=原材料	
+KB_QA	QA_DEF_FORMULA	I_FEE_BASE	ANY	def_formula	工费怎么算|+1什么意思|+2什么意思	工费=基础+旧料2+后寄1+亮面1(仅可选)	
+KB_QA	QA_FEE_BASE_A_WHEEL	I_FEE_BASE	A_WHEEL	base_fee	古法轮胎手镯工费|古法轮胎手镯多少钱一克|古法轮胎工费|轮胎手镯工费|轮胎镯工费	古法轮胎手镯3.5元/克（存料板料金条工费） 出货后到板料金条工费+1=4.5元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_A_WHEEL_INNER	I_FEE_BASE	A_WHEEL	base_fee	古法轮胎内百福/内心经手镯工费|古法轮胎内百福/内心经手镯多少钱一克|古法轮胎内百福工费|古法轮胎内心经工费|轮胎内百福工费	古法轮胎内百福/内心经手镯4.5元/克（存料板料金条工费） 出货后到板料金条工费+1=5.5元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_B_NIQIU	I_FEE_BASE	B_NIQIU	base_fee	古法泥鳅背手镯工费|古法泥鳅背手镯多少钱一克|古法泥鳅背工费|泥鳅背工费|空心泥鳅背工费	古法泥鳅背手镯3元/克（存料板料金条工费） 出货后到板料金条工费+1=4元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_B_NIQIU_INNER	I_FEE_BASE	B_NIQIU	base_fee	古法泥鳅背内百福/内心经手镯工费|古法泥鳅背内百福/内心经手镯多少钱一克|古法泥鳅背内百福工费|古法泥鳅背内心经工费|泥鳅背内百福工费	古法泥鳅背内百福/内心经手镯4元/克（存料板料金条工费） 出货后到板料金条工费+1=5元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_C_ROUND_20	I_FEE_BASE	C_ROUND	base_fee	古法圆棍/素圈空心（20g起）工费|古法圆棍/素圈空心（20g起）多少钱一克|圆棍空心20克工费|素圈空心20克工费|20克起圆棍空心工费	古法圆棍/素圈空心（20g起）2元/克（存料板料金条工费） 出货后到板料金条工费+1=3元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_C_ROUND_15	I_FEE_BASE	C_ROUND	base_fee	古法圆棍/素圈空心（约15g）工费|古法圆棍/素圈空心（约15g）多少钱一克|圆棍空心15克工费|素圈空心15克工费|小克重空心素圈工费	古法圆棍/素圈空心（约15g）3元/克（存料板料金条工费） 出货后到板料金条工费+1=4元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_D_SQUARE	I_FEE_BASE	D_SQUARE	base_fee	古法空心方镯工费|古法空心方镯多少钱一克|古法空心方镯工费|空心方镯工费|方镯工费	古法空心方镯5元/克（存料板料金条工费） 出货后到板料金条工费+1=6元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_E_SOLID_BAIFU	I_FEE_BASE	E_SOLID_BAIFU	base_fee	古法实心百福手镯（满镶）工费|古法实心百福手镯（满镶）多少钱一克|古法实心百福工费|实心百福工费|百福满镶工费	古法实心百福手镯（满镶）15元/克（存料板料金条工费） 出货后到板料金条工费+1=16元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_F_JUANCAO	I_FEE_BASE	F_JUANCAO	base_fee	卷草纹手镯工费|卷草纹手镯多少钱一克|卷草纹工费|卷草纹手镯工费	卷草纹手镯8元/克（存料板料金条工费） 出货后到板料金条工费+1=9元/克	
+KB_QA	QA_FEE_BASE_G_BRUSH	I_FEE_BASE	G_BRUSH	base_fee	高级手工拉丝素圈工费|高级手工拉丝素圈多少钱一克|高级手工拉丝素圈工费|高级手工拉丝工费|手工拉丝素圈工费	高级手工拉丝素圈10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_H_MIRROR_WAVE	I_FEE_BASE	H_MIRROR_WAVE	base_fee	镜面金水波纹手镯工费|镜面金水波纹手镯多少钱一克|镜面金水波纹工费|金水波纹工费|镜面水波纹工费	镜面金水波纹手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_I_SILK	I_FEE_BASE	I_SILK	base_fee	金丝锦织手镯工费|金丝锦织手镯多少钱一克|金丝锦织工费|锦织手镯工费	金丝锦织手镯11元/克（存料板料金条工费） 出货后到板料金条工费+1=12元/克	
+KB_QA	QA_FEE_BASE_J_LIUZHI	I_FEE_BASE	J_LIUZHI	base_fee	鎏枝映月开口贵妃镯工费|鎏枝映月开口贵妃镯多少钱一克|鎏枝映月工费|鎏枝映月开口贵妃工费|开口贵妃鎏枝映月工费	鎏枝映月开口贵妃镯11元/克（存料板料金条工费） 出货后到板料金条工费+1=12元/克	
+KB_QA	QA_FEE_BASE_K_LACE	I_FEE_BASE	K_LACE	base_fee	蕾丝桂冠手镯工费|蕾丝桂冠手镯多少钱一克|蕾丝桂冠工费|桂冠手镯工费|蕾丝桂冠手镯工费	蕾丝桂冠手镯15元/克（存料板料金条工费） 出货后到板料金条工费+1=16元/克 附加88元/件	
+KB_QA	QA_FEE_BASE_L_WANRONG	I_FEE_BASE	L_WANRONG	base_fee	婉容手镯工费|婉容手镯多少钱一克|婉容工费|婉容手镯工费	婉容手镯8元/克（存料板料金条工费） 出货后到板料金条工费+1=9元/克 如需亮面+1元/克	
+KB_QA	QA_FEE_BASE_M_5G_FINE	I_FEE_BASE	M_5G_FINE	base_fee	5G点钻莫比乌斯细工费|5G点钻莫比乌斯细多少钱一克|5G点钻莫比乌斯细工费|莫比乌斯细工费|点钻莫比乌斯细工费	5G点钻莫比乌斯细18元/克（存料板料金条工费） 出货后到板料金条工费+1=19元/克 附加25元/件	
+KB_QA	QA_FEE_BASE_N_5G_COARSE	I_FEE_BASE	N_5G_COARSE	base_fee	5G点钻莫比乌斯粗工费|5G点钻莫比乌斯粗多少钱一克|5G点钻莫比乌斯粗工费|莫比乌斯粗工费|点钻莫比乌斯粗工费	5G点钻莫比乌斯粗18元/克（存料板料金条工费） 出货后到板料金条工费+1=19元/克 附加150元/件	
+KB_QA	QA_FEE_BASE_O_5G_HALF_CHAIN	I_FEE_BASE	O_5G_HALF_CHAIN	base_fee	5G方钻半镯链工费|5G方钻半镯链多少钱一克|5G方钻半镯链工费|方钻半镯链工费|半镯链工费	5G方钻半镯链18元/克（存料板料金条工费） 出货后到板料金条工费+1=19元/克 附加160元/件	
+KB_QA	QA_FEE_BASE_P_5G_GUFEI	I_FEE_BASE	P_5G_GUFEI	base_fee	5G卡扣方钻贵妃镯工费|5G卡扣方钻贵妃镯多少钱一克|5G卡扣方钻贵妃工费|卡扣方钻贵妃工费|方钻贵妃工费	5G卡扣方钻贵妃镯18元/克（存料板料金条工费） 出货后到板料金条工费+1=19元/克 附加：满钻320元/件；半圈钻170元/件	
+KB_QA	QA_FEE_BASE_Q_DRAGON	I_FEE_BASE	Q_DRAGON	base_fee	镜面金龙鳞手镯工费|镜面金龙鳞手镯多少钱一克|镜面金龙鳞工费|金龙鳞工费|龙鳞手镯工费	镜面金龙鳞手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_R_ICE	I_FEE_BASE	R_ICE	base_fee	镜面金冰块手镯工费|镜面金冰块手镯多少钱一克|镜面金冰块工费|金冰块工费|冰块手镯工费	镜面金冰块手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_S_RIPPLE	I_FEE_BASE	S_RIPPLE	base_fee	镜面金波光粼粼手镯工费|镜面金波光粼粼手镯多少钱一克|镜面金波光粼粼工费|波光粼粼工费|波光粼粼手镯工费	镜面金波光粼粼手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_T_HONEY	I_FEE_BASE	T_HONEY	base_fee	镜面蜂巢手镯工费|镜面蜂巢手镯多少钱一克|镜面蜂巢工费|蜂巢工费|蜂巢手镯工费	镜面蜂巢手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_U_SNAKE	I_FEE_BASE	U_SNAKE	base_fee	蛇镯工费|蛇镯多少钱一克|蛇镯工费	蛇镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_V_LOTUS	I_FEE_BASE	V_LOTUS	base_fee	荷叶三角手镯工费|荷叶三角手镯多少钱一克|荷叶三角工费|荷叶三角手镯工费	荷叶三角手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_W_MI	I_FEE_BASE	W_MI	base_fee	米字卡镯工费|米字卡镯多少钱一克|米字卡镯工费|米字工费	米字卡镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_X_BROKEN	I_FEE_BASE	X_BROKEN	base_fee	碎金万两手镯工费|碎金万两手镯多少钱一克|碎金万两工费	碎金万两手镯10元/克（存料板料金条工费） 出货后到板料金条工费+1=11元/克	
+KB_QA	QA_FEE_BASE_Y_TWIST_CHAIN	I_FEE_BASE	Y_TWIST_CHAIN	base_fee	麻花蕾丝镯链工费|麻花蕾丝镯链多少钱一克|麻花蕾丝镯链工费|蕾丝镯链工费|麻花蕾丝工费	麻花蕾丝镯链18元/克（存料板料金条工费） 出货后到板料金条工费+1=19元/克 附加190元/件	
+KB_QA	QA_FEE_BASE_Z_OPEN_GUFEI	I_FEE_BASE	Z_OPEN_GUFEI	base_fee	开口贵妃莫桑泥鳅背工费|开口贵妃莫桑泥鳅背多少钱一克|开口贵妃莫桑泥鳅背工费|开口贵妃泥鳅背工费|开口贵妃莫桑工费	开口贵妃莫桑泥鳅背12元/克（存料板料金条工费） 出货后到板料金条工费+1=13元/克 如需亮面+1元/克	
+KB_QA	QA_RATE_A_WHEEL_NEW_ON_MATTE	I_FEE_COMBO	A_WHEEL	material=NEW;timing=ON;finish=MATTE	古法轮胎板料金条按时到料不亮面工费|古法轮胎板料金条按时到料不亮面多少钱一克|轮胎手镯板料金条按时到料不亮面工费|轮胎手镯板料金条按时到料不亮面多少钱一克|古法轮胎手镯板料金条按时到料不亮面工费	3.5元/克	
+KB_QA	QA_RATE_A_WHEEL_NEW_ON_BRIGHT	I_FEE_COMBO	A_WHEEL	material=NEW;timing=ON;finish=BRIGHT	古法轮胎板料金条按时到料亮面工费|古法轮胎板料金条按时到料亮面多少钱一克|轮胎手镯板料金条按时到料亮面工费|轮胎手镯板料金条按时到料亮面多少钱一克|古法轮胎手镯板料金条按时到料亮面工费	4.5元/克	
+KB_QA	QA_RATE_A_WHEEL_NEW_POST_MATTE	I_FEE_COMBO	A_WHEEL	material=NEW;timing=POST;finish=MATTE	古法轮胎板料金条出货后到料不亮面工费|古法轮胎板料金条出货后到料不亮面多少钱一克|轮胎手镯板料金条出货后到料不亮面工费|轮胎手镯板料金条出货后到料不亮面多少钱一克|古法轮胎手镯板料金条出货后到料不亮面工费	4.5元/克	
+KB_QA	QA_RATE_A_WHEEL_NEW_POST_BRIGHT	I_FEE_COMBO	A_WHEEL	material=NEW;timing=POST;finish=BRIGHT	古法轮胎板料金条出货后到料亮面工费|古法轮胎板料金条出货后到料亮面多少钱一克|轮胎手镯板料金条出货后到料亮面工费|轮胎手镯板料金条出货后到料亮面多少钱一克|古法轮胎手镯板料金条出货后到料亮面工费	5.5元/克	
+KB_QA	QA_RATE_A_WHEEL_OLD_ON_MATTE	I_FEE_COMBO	A_WHEEL	material=OLD;timing=ON;finish=MATTE	古法轮胎旧料按时到料不亮面工费|古法轮胎旧料按时到料不亮面多少钱一克|轮胎手镯旧料按时到料不亮面工费|轮胎手镯旧料按时到料不亮面多少钱一克|古法轮胎手镯旧料按时到料不亮面工费	5.5元/克	
+KB_QA	QA_RATE_A_WHEEL_OLD_ON_BRIGHT	I_FEE_COMBO	A_WHEEL	material=OLD;timing=ON;finish=BRIGHT	古法轮胎旧料按时到料亮面工费|古法轮胎旧料按时到料亮面多少钱一克|轮胎手镯旧料按时到料亮面工费|轮胎手镯旧料按时到料亮面多少钱一克|古法轮胎手镯旧料按时到料亮面工费	6.5元/克	
+KB_QA	QA_RATE_A_WHEEL_OLD_POST_MATTE	I_FEE_COMBO	A_WHEEL	material=OLD;timing=POST;finish=MATTE	古法轮胎旧料出货后到料不亮面工费|古法轮胎旧料出货后到料不亮面多少钱一克|轮胎手镯旧料出货后到料不亮面工费|轮胎手镯旧料出货后到料不亮面多少钱一克|古法轮胎手镯旧料出货后到料不亮面工费	6.5元/克	
+KB_QA	QA_RATE_A_WHEEL_OLD_POST_BRIGHT	I_FEE_COMBO	A_WHEEL	material=OLD;timing=POST;finish=BRIGHT	古法轮胎旧料出货后到料亮面工费|古法轮胎旧料出货后到料亮面多少钱一克|轮胎手镯旧料出货后到料亮面工费|轮胎手镯旧料出货后到料亮面多少钱一克|古法轮胎手镯旧料出货后到料亮面工费	7.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_NEW_ON_MATTE	I_FEE_COMBO	A_WHEEL	material=NEW;timing=ON;finish=MATTE	古法轮胎内百福板料金条按时到料不亮面工费|古法轮胎内百福板料金条按时到料不亮面多少钱一克|古法轮胎内心经板料金条按时到料不亮面工费|古法轮胎内心经板料金条按时到料不亮面多少钱一克|古法轮胎内百福/内心经手镯板料金条按时到料不亮面工费	4.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_NEW_ON_BRIGHT	I_FEE_COMBO	A_WHEEL	material=NEW;timing=ON;finish=BRIGHT	古法轮胎内百福板料金条按时到料亮面工费|古法轮胎内百福板料金条按时到料亮面多少钱一克|古法轮胎内心经板料金条按时到料亮面工费|古法轮胎内心经板料金条按时到料亮面多少钱一克|古法轮胎内百福/内心经手镯板料金条按时到料亮面工费	5.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_NEW_POST_MATTE	I_FEE_COMBO	A_WHEEL	material=NEW;timing=POST;finish=MATTE	古法轮胎内百福板料金条出货后到料不亮面工费|古法轮胎内百福板料金条出货后到料不亮面多少钱一克|古法轮胎内心经板料金条出货后到料不亮面工费|古法轮胎内心经板料金条出货后到料不亮面多少钱一克|古法轮胎内百福/内心经手镯板料金条出货后到料不亮面工费	5.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_NEW_POST_BRIGHT	I_FEE_COMBO	A_WHEEL	material=NEW;timing=POST;finish=BRIGHT	古法轮胎内百福板料金条出货后到料亮面工费|古法轮胎内百福板料金条出货后到料亮面多少钱一克|古法轮胎内心经板料金条出货后到料亮面工费|古法轮胎内心经板料金条出货后到料亮面多少钱一克|古法轮胎内百福/内心经手镯板料金条出货后到料亮面工费	6.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_OLD_ON_MATTE	I_FEE_COMBO	A_WHEEL	material=OLD;timing=ON;finish=MATTE	古法轮胎内百福旧料按时到料不亮面工费|古法轮胎内百福旧料按时到料不亮面多少钱一克|古法轮胎内心经旧料按时到料不亮面工费|古法轮胎内心经旧料按时到料不亮面多少钱一克|古法轮胎内百福/内心经手镯旧料按时到料不亮面工费	6.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_OLD_ON_BRIGHT	I_FEE_COMBO	A_WHEEL	material=OLD;timing=ON;finish=BRIGHT	古法轮胎内百福旧料按时到料亮面工费|古法轮胎内百福旧料按时到料亮面多少钱一克|古法轮胎内心经旧料按时到料亮面工费|古法轮胎内心经旧料按时到料亮面多少钱一克|古法轮胎内百福/内心经手镯旧料按时到料亮面工费	7.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_OLD_POST_MATTE	I_FEE_COMBO	A_WHEEL	material=OLD;timing=POST;finish=MATTE	古法轮胎内百福旧料出货后到料不亮面工费|古法轮胎内百福旧料出货后到料不亮面多少钱一克|古法轮胎内心经旧料出货后到料不亮面工费|古法轮胎内心经旧料出货后到料不亮面多少钱一克|古法轮胎内百福/内心经手镯旧料出货后到料不亮面工费	7.5元/克	
+KB_QA	QA_RATE_A_WHEEL_INNER_OLD_POST_BRIGHT	I_FEE_COMBO	A_WHEEL	material=OLD;timing=POST;finish=BRIGHT	古法轮胎内百福旧料出货后到料亮面工费|古法轮胎内百福旧料出货后到料亮面多少钱一克|古法轮胎内心经旧料出货后到料亮面工费|古法轮胎内心经旧料出货后到料亮面多少钱一克|古法轮胎内百福/内心经手镯旧料出货后到料亮面工费	8.5元/克	
+KB_QA	QA_RATE_B_NIQIU_NEW_ON_MATTE	I_FEE_COMBO	B_NIQIU	material=NEW;timing=ON;finish=MATTE	古法泥鳅背板料金条按时到料不亮面工费|古法泥鳅背板料金条按时到料不亮面多少钱一克|泥鳅背板料金条按时到料不亮面工费|泥鳅背板料金条按时到料不亮面多少钱一克|古法泥鳅背手镯板料金条按时到料不亮面工费	3元/克	
+KB_QA	QA_RATE_B_NIQIU_NEW_ON_BRIGHT	I_FEE_COMBO	B_NIQIU	material=NEW;timing=ON;finish=BRIGHT	古法泥鳅背板料金条按时到料亮面工费|古法泥鳅背板料金条按时到料亮面多少钱一克|泥鳅背板料金条按时到料亮面工费|泥鳅背板料金条按时到料亮面多少钱一克|古法泥鳅背手镯板料金条按时到料亮面工费	4元/克	
+KB_QA	QA_RATE_B_NIQIU_NEW_POST_MATTE	I_FEE_COMBO	B_NIQIU	material=NEW;timing=POST;finish=MATTE	古法泥鳅背板料金条出货后到料不亮面工费|古法泥鳅背板料金条出货后到料不亮面多少钱一克|泥鳅背板料金条出货后到料不亮面工费|泥鳅背板料金条出货后到料不亮面多少钱一克|古法泥鳅背手镯板料金条出货后到料不亮面工费	4元/克	
+KB_QA	QA_RATE_B_NIQIU_NEW_POST_BRIGHT	I_FEE_COMBO	B_NIQIU	material=NEW;timing=POST;finish=BRIGHT	古法泥鳅背板料金条出货后到料亮面工费|古法泥鳅背板料金条出货后到料亮面多少钱一克|泥鳅背板料金条出货后到料亮面工费|泥鳅背板料金条出货后到料亮面多少钱一克|古法泥鳅背手镯板料金条出货后到料亮面工费	5元/克	
+KB_QA	QA_RATE_B_NIQIU_OLD_ON_MATTE	I_FEE_COMBO	B_NIQIU	material=OLD;timing=ON;finish=MATTE	古法泥鳅背旧料按时到料不亮面工费|古法泥鳅背旧料按时到料不亮面多少钱一克|泥鳅背旧料按时到料不亮面工费|泥鳅背旧料按时到料不亮面多少钱一克|古法泥鳅背手镯旧料按时到料不亮面工费	5元/克	
+KB_QA	QA_RATE_B_NIQIU_OLD_ON_BRIGHT	I_FEE_COMBO	B_NIQIU	material=OLD;timing=ON;finish=BRIGHT	古法泥鳅背旧料按时到料亮面工费|古法泥鳅背旧料按时到料亮面多少钱一克|泥鳅背旧料按时到料亮面工费|泥鳅背旧料按时到料亮面多少钱一克|古法泥鳅背手镯旧料按时到料亮面工费	6元/克	
+KB_QA	QA_RATE_B_NIQIU_OLD_POST_MATTE	I_FEE_COMBO	B_NIQIU	material=OLD;timing=POST;finish=MATTE	古法泥鳅背旧料出货后到料不亮面工费|古法泥鳅背旧料出货后到料不亮面多少钱一克|泥鳅背旧料出货后到料不亮面工费|泥鳅背旧料出货后到料不亮面多少钱一克|古法泥鳅背手镯旧料出货后到料不亮面工费	6元/克	
+KB_QA	QA_RATE_B_NIQIU_OLD_POST_BRIGHT	I_FEE_COMBO	B_NIQIU	material=OLD;timing=POST;finish=BRIGHT	古法泥鳅背旧料出货后到料亮面工费|古法泥鳅背旧料出货后到料亮面多少钱一克|泥鳅背旧料出货后到料亮面工费|泥鳅背旧料出货后到料亮面多少钱一克|古法泥鳅背手镯旧料出货后到料亮面工费	7元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_NEW_ON_MATTE	I_FEE_COMBO	B_NIQIU	material=NEW;timing=ON;finish=MATTE	古法泥鳅背内百福板料金条按时到料不亮面工费|古法泥鳅背内百福板料金条按时到料不亮面多少钱一克|古法泥鳅背内心经板料金条按时到料不亮面工费|古法泥鳅背内心经板料金条按时到料不亮面多少钱一克|古法泥鳅背内百福/内心经手镯板料金条按时到料不亮面工费	4元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_NEW_ON_BRIGHT	I_FEE_COMBO	B_NIQIU	material=NEW;timing=ON;finish=BRIGHT	古法泥鳅背内百福板料金条按时到料亮面工费|古法泥鳅背内百福板料金条按时到料亮面多少钱一克|古法泥鳅背内心经板料金条按时到料亮面工费|古法泥鳅背内心经板料金条按时到料亮面多少钱一克|古法泥鳅背内百福/内心经手镯板料金条按时到料亮面工费	5元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_NEW_POST_MATTE	I_FEE_COMBO	B_NIQIU	material=NEW;timing=POST;finish=MATTE	古法泥鳅背内百福板料金条出货后到料不亮面工费|古法泥鳅背内百福板料金条出货后到料不亮面多少钱一克|古法泥鳅背内心经板料金条出货后到料不亮面工费|古法泥鳅背内心经板料金条出货后到料不亮面多少钱一克|古法泥鳅背内百福/内心经手镯板料金条出货后到料不亮面工费	5元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_NEW_POST_BRIGHT	I_FEE_COMBO	B_NIQIU	material=NEW;timing=POST;finish=BRIGHT	古法泥鳅背内百福板料金条出货后到料亮面工费|古法泥鳅背内百福板料金条出货后到料亮面多少钱一克|古法泥鳅背内心经板料金条出货后到料亮面工费|古法泥鳅背内心经板料金条出货后到料亮面多少钱一克|古法泥鳅背内百福/内心经手镯板料金条出货后到料亮面工费	6元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_OLD_ON_MATTE	I_FEE_COMBO	B_NIQIU	material=OLD;timing=ON;finish=MATTE	古法泥鳅背内百福旧料按时到料不亮面工费|古法泥鳅背内百福旧料按时到料不亮面多少钱一克|古法泥鳅背内心经旧料按时到料不亮面工费|古法泥鳅背内心经旧料按时到料不亮面多少钱一克|古法泥鳅背内百福/内心经手镯旧料按时到料不亮面工费	6元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_OLD_ON_BRIGHT	I_FEE_COMBO	B_NIQIU	material=OLD;timing=ON;finish=BRIGHT	古法泥鳅背内百福旧料按时到料亮面工费|古法泥鳅背内百福旧料按时到料亮面多少钱一克|古法泥鳅背内心经旧料按时到料亮面工费|古法泥鳅背内心经旧料按时到料亮面多少钱一克|古法泥鳅背内百福/内心经手镯旧料按时到料亮面工费	7元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_OLD_POST_MATTE	I_FEE_COMBO	B_NIQIU	material=OLD;timing=POST;finish=MATTE	古法泥鳅背内百福旧料出货后到料不亮面工费|古法泥鳅背内百福旧料出货后到料不亮面多少钱一克|古法泥鳅背内心经旧料出货后到料不亮面工费|古法泥鳅背内心经旧料出货后到料不亮面多少钱一克|古法泥鳅背内百福/内心经手镯旧料出货后到料不亮面工费	7元/克	
+KB_QA	QA_RATE_B_NIQIU_INNER_OLD_POST_BRIGHT	I_FEE_COMBO	B_NIQIU	material=OLD;timing=POST;finish=BRIGHT	古法泥鳅背内百福旧料出货后到料亮面工费|古法泥鳅背内百福旧料出货后到料亮面多少钱一克|古法泥鳅背内心经旧料出货后到料亮面工费|古法泥鳅背内心经旧料出货后到料亮面多少钱一克|古法泥鳅背内百福/内心经手镯旧料出货后到料亮面工费	8元/克	
+KB_QA	QA_RATE_C_ROUND_20_NEW_ON_MATTE	I_FEE_COMBO	C_ROUND	material=NEW;timing=ON;finish=MATTE	圆棍空心20克板料金条按时到料不亮面工费|圆棍空心20克板料金条按时到料不亮面多少钱一克|素圈空心20克板料金条按时到料不亮面工费|素圈空心20克板料金条按时到料不亮面多少钱一克|古法圆棍/素圈空心（20g起）板料金条按时到料不亮面工费	2元/克	
+KB_QA	QA_RATE_C_ROUND_20_NEW_ON_BRIGHT	I_FEE_COMBO	C_ROUND	material=NEW;timing=ON;finish=BRIGHT	圆棍空心20克板料金条按时到料亮面工费|圆棍空心20克板料金条按时到料亮面多少钱一克|素圈空心20克板料金条按时到料亮面工费|素圈空心20克板料金条按时到料亮面多少钱一克|古法圆棍/素圈空心（20g起）板料金条按时到料亮面工费	3元/克	
+KB_QA	QA_RATE_C_ROUND_20_NEW_POST_MATTE	I_FEE_COMBO	C_ROUND	material=NEW;timing=POST;finish=MATTE	圆棍空心20克板料金条出货后到料不亮面工费|圆棍空心20克板料金条出货后到料不亮面多少钱一克|素圈空心20克板料金条出货后到料不亮面工费|素圈空心20克板料金条出货后到料不亮面多少钱一克|古法圆棍/素圈空心（20g起）板料金条出货后到料不亮面工费	3元/克	
+KB_QA	QA_RATE_C_ROUND_20_NEW_POST_BRIGHT	I_FEE_COMBO	C_ROUND	material=NEW;timing=POST;finish=BRIGHT	圆棍空心20克板料金条出货后到料亮面工费|圆棍空心20克板料金条出货后到料亮面多少钱一克|素圈空心20克板料金条出货后到料亮面工费|素圈空心20克板料金条出货后到料亮面多少钱一克|古法圆棍/素圈空心（20g起）板料金条出货后到料亮面工费	4元/克	
+KB_QA	QA_RATE_C_ROUND_20_OLD_ON_MATTE	I_FEE_COMBO	C_ROUND	material=OLD;timing=ON;finish=MATTE	圆棍空心20克旧料按时到料不亮面工费|圆棍空心20克旧料按时到料不亮面多少钱一克|素圈空心20克旧料按时到料不亮面工费|素圈空心20克旧料按时到料不亮面多少钱一克|古法圆棍/素圈空心（20g起）旧料按时到料不亮面工费	4元/克	
+KB_QA	QA_RATE_C_ROUND_20_OLD_ON_BRIGHT	I_FEE_COMBO	C_ROUND	material=OLD;timing=ON;finish=BRIGHT	圆棍空心20克旧料按时到料亮面工费|圆棍空心20克旧料按时到料亮面多少钱一克|素圈空心20克旧料按时到料亮面工费|素圈空心20克旧料按时到料亮面多少钱一克|古法圆棍/素圈空心（20g起）旧料按时到料亮面工费	5元/克	
+KB_QA	QA_RATE_C_ROUND_20_OLD_POST_MATTE	I_FEE_COMBO	C_ROUND	material=OLD;timing=POST;finish=MATTE	圆棍空心20克旧料出货后到料不亮面工费|圆棍空心20克旧料出货后到料不亮面多少钱一克|素圈空心20克旧料出货后到料不亮面工费|素圈空心20克旧料出货后到料不亮面多少钱一克|古法圆棍/素圈空心（20g起）旧料出货后到料不亮面工费	5元/克	
+KB_QA	QA_RATE_C_ROUND_20_OLD_POST_BRIGHT	I_FEE_COMBO	C_ROUND	material=OLD;timing=POST;finish=BRIGHT	圆棍空心20克旧料出货后到料亮面工费|圆棍空心20克旧料出货后到料亮面多少钱一克|素圈空心20克旧料出货后到料亮面工费|素圈空心20克旧料出货后到料亮面多少钱一克|古法圆棍/素圈空心（20g起）旧料出货后到料亮面工费	6元/克	
+KB_QA	QA_RATE_C_ROUND_15_NEW_ON_MATTE	I_FEE_COMBO	C_ROUND	material=NEW;timing=ON;finish=MATTE	圆棍空心15克板料金条按时到料不亮面工费|圆棍空心15克板料金条按时到料不亮面多少钱一克|素圈空心15克板料金条按时到料不亮面工费|素圈空心15克板料金条按时到料不亮面多少钱一克|古法圆棍/素圈空心（约15g）板料金条按时到料不亮面工费	3元/克	
+KB_QA	QA_RATE_C_ROUND_15_NEW_ON_BRIGHT	I_FEE_COMBO	C_ROUND	material=NEW;timing=ON;finish=BRIGHT	圆棍空心15克板料金条按时到料亮面工费|圆棍空心15克板料金条按时到料亮面多少钱一克|素圈空心15克板料金条按时到料亮面工费|素圈空心15克板料金条按时到料亮面多少钱一克|古法圆棍/素圈空心（约15g）板料金条按时到料亮面工费	4元/克	
+KB_QA	QA_RATE_C_ROUND_15_NEW_POST_MATTE	I_FEE_COMBO	C_ROUND	material=NEW;timing=POST;finish=MATTE	圆棍空心15克板料金条出货后到料不亮面工费|圆棍空心15克板料金条出货后到料不亮面多少钱一克|素圈空心15克板料金条出货后到料不亮面工费|素圈空心15克板料金条出货后到料不亮面多少钱一克|古法圆棍/素圈空心（约15g）板料金条出货后到料不亮面工费	4元/克	
+KB_QA	QA_RATE_C_ROUND_15_NEW_POST_BRIGHT	I_FEE_COMBO	C_ROUND	material=NEW;timing=POST;finish=BRIGHT	圆棍空心15克板料金条出货后到料亮面工费|圆棍空心15克板料金条出货后到料亮面多少钱一克|素圈空心15克板料金条出货后到料亮面工费|素圈空心15克板料金条出货后到料亮面多少钱一克|古法圆棍/素圈空心（约15g）板料金条出货后到料亮面工费	5元/克	
+KB_QA	QA_RATE_C_ROUND_15_OLD_ON_MATTE	I_FEE_COMBO	C_ROUND	material=OLD;timing=ON;finish=MATTE	圆棍空心15克旧料按时到料不亮面工费|圆棍空心15克旧料按时到料不亮面多少钱一克|素圈空心15克旧料按时到料不亮面工费|素圈空心15克旧料按时到料不亮面多少钱一克|古法圆棍/素圈空心（约15g）旧料按时到料不亮面工费	5元/克	
+KB_QA	QA_RATE_C_ROUND_15_OLD_ON_BRIGHT	I_FEE_COMBO	C_ROUND	material=OLD;timing=ON;finish=BRIGHT	圆棍空心15克旧料按时到料亮面工费|圆棍空心15克旧料按时到料亮面多少钱一克|素圈空心15克旧料按时到料亮面工费|素圈空心15克旧料按时到料亮面多少钱一克|古法圆棍/素圈空心（约15g）旧料按时到料亮面工费	6元/克	
+KB_QA	QA_RATE_C_ROUND_15_OLD_POST_MATTE	I_FEE_COMBO	C_ROUND	material=OLD;timing=POST;finish=MATTE	圆棍空心15克旧料出货后到料不亮面工费|圆棍空心15克旧料出货后到料不亮面多少钱一克|素圈空心15克旧料出货后到料不亮面工费|素圈空心15克旧料出货后到料不亮面多少钱一克|古法圆棍/素圈空心（约15g）旧料出货后到料不亮面工费	6元/克	
+KB_QA	QA_RATE_C_ROUND_15_OLD_POST_BRIGHT	I_FEE_COMBO	C_ROUND	material=OLD;timing=POST;finish=BRIGHT	圆棍空心15克旧料出货后到料亮面工费|圆棍空心15克旧料出货后到料亮面多少钱一克|素圈空心15克旧料出货后到料亮面工费|素圈空心15克旧料出货后到料亮面多少钱一克|古法圆棍/素圈空心（约15g）旧料出货后到料亮面工费	7元/克	
+KB_QA	QA_RATE_D_SQUARE_NEW_ON_MATTE	I_FEE_COMBO	D_SQUARE	material=NEW;timing=ON;finish=MATTE	古法空心方镯板料金条按时到料不亮面工费|古法空心方镯板料金条按时到料不亮面多少钱一克|空心方镯板料金条按时到料不亮面工费|空心方镯板料金条按时到料不亮面多少钱一克|古法空心方镯板料金条按时到料不亮面工费	5元/克	
+KB_QA	QA_RATE_D_SQUARE_NEW_ON_BRIGHT	I_FEE_COMBO	D_SQUARE	material=NEW;timing=ON;finish=BRIGHT	古法空心方镯板料金条按时到料亮面工费|古法空心方镯板料金条按时到料亮面多少钱一克|空心方镯板料金条按时到料亮面工费|空心方镯板料金条按时到料亮面多少钱一克|古法空心方镯板料金条按时到料亮面工费	6元/克	
+KB_QA	QA_RATE_D_SQUARE_NEW_POST_MATTE	I_FEE_COMBO	D_SQUARE	material=NEW;timing=POST;finish=MATTE	古法空心方镯板料金条出货后到料不亮面工费|古法空心方镯板料金条出货后到料不亮面多少钱一克|空心方镯板料金条出货后到料不亮面工费|空心方镯板料金条出货后到料不亮面多少钱一克|古法空心方镯板料金条出货后到料不亮面工费	6元/克	
+KB_QA	QA_RATE_D_SQUARE_NEW_POST_BRIGHT	I_FEE_COMBO	D_SQUARE	material=NEW;timing=POST;finish=BRIGHT	古法空心方镯板料金条出货后到料亮面工费|古法空心方镯板料金条出货后到料亮面多少钱一克|空心方镯板料金条出货后到料亮面工费|空心方镯板料金条出货后到料亮面多少钱一克|古法空心方镯板料金条出货后到料亮面工费	7元/克	
+KB_QA	QA_RATE_D_SQUARE_OLD_ON_MATTE	I_FEE_COMBO	D_SQUARE	material=OLD;timing=ON;finish=MATTE	古法空心方镯旧料按时到料不亮面工费|古法空心方镯旧料按时到料不亮面多少钱一克|空心方镯旧料按时到料不亮面工费|空心方镯旧料按时到料不亮面多少钱一克|古法空心方镯旧料按时到料不亮面工费	7元/克	
+KB_QA	QA_RATE_D_SQUARE_OLD_ON_BRIGHT	I_FEE_COMBO	D_SQUARE	material=OLD;timing=ON;finish=BRIGHT	古法空心方镯旧料按时到料亮面工费|古法空心方镯旧料按时到料亮面多少钱一克|空心方镯旧料按时到料亮面工费|空心方镯旧料按时到料亮面多少钱一克|古法空心方镯旧料按时到料亮面工费	8元/克	
+KB_QA	QA_RATE_D_SQUARE_OLD_POST_MATTE	I_FEE_COMBO	D_SQUARE	material=OLD;timing=POST;finish=MATTE	古法空心方镯旧料出货后到料不亮面工费|古法空心方镯旧料出货后到料不亮面多少钱一克|空心方镯旧料出货后到料不亮面工费|空心方镯旧料出货后到料不亮面多少钱一克|古法空心方镯旧料出货后到料不亮面工费	8元/克	
+KB_QA	QA_RATE_D_SQUARE_OLD_POST_BRIGHT	I_FEE_COMBO	D_SQUARE	material=OLD;timing=POST;finish=BRIGHT	古法空心方镯旧料出货后到料亮面工费|古法空心方镯旧料出货后到料亮面多少钱一克|空心方镯旧料出货后到料亮面工费|空心方镯旧料出货后到料亮面多少钱一克|古法空心方镯旧料出货后到料亮面工费	9元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_NEW_ON_MATTE	I_FEE_COMBO	E_SOLID_BAIFU	material=NEW;timing=ON;finish=MATTE	古法实心百福板料金条按时到料不亮面工费|古法实心百福板料金条按时到料不亮面多少钱一克|实心百福板料金条按时到料不亮面工费|实心百福板料金条按时到料不亮面多少钱一克|古法实心百福手镯（满镶）板料金条按时到料不亮面工费	15元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_NEW_ON_BRIGHT	I_FEE_COMBO	E_SOLID_BAIFU	material=NEW;timing=ON;finish=BRIGHT	古法实心百福板料金条按时到料亮面工费|古法实心百福板料金条按时到料亮面多少钱一克|实心百福板料金条按时到料亮面工费|实心百福板料金条按时到料亮面多少钱一克|古法实心百福手镯（满镶）板料金条按时到料亮面工费	16元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_NEW_POST_MATTE	I_FEE_COMBO	E_SOLID_BAIFU	material=NEW;timing=POST;finish=MATTE	古法实心百福板料金条出货后到料不亮面工费|古法实心百福板料金条出货后到料不亮面多少钱一克|实心百福板料金条出货后到料不亮面工费|实心百福板料金条出货后到料不亮面多少钱一克|古法实心百福手镯（满镶）板料金条出货后到料不亮面工费	16元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_NEW_POST_BRIGHT	I_FEE_COMBO	E_SOLID_BAIFU	material=NEW;timing=POST;finish=BRIGHT	古法实心百福板料金条出货后到料亮面工费|古法实心百福板料金条出货后到料亮面多少钱一克|实心百福板料金条出货后到料亮面工费|实心百福板料金条出货后到料亮面多少钱一克|古法实心百福手镯（满镶）板料金条出货后到料亮面工费	17元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_OLD_ON_MATTE	I_FEE_COMBO	E_SOLID_BAIFU	material=OLD;timing=ON;finish=MATTE	古法实心百福旧料按时到料不亮面工费|古法实心百福旧料按时到料不亮面多少钱一克|实心百福旧料按时到料不亮面工费|实心百福旧料按时到料不亮面多少钱一克|古法实心百福手镯（满镶）旧料按时到料不亮面工费	17元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_OLD_ON_BRIGHT	I_FEE_COMBO	E_SOLID_BAIFU	material=OLD;timing=ON;finish=BRIGHT	古法实心百福旧料按时到料亮面工费|古法实心百福旧料按时到料亮面多少钱一克|实心百福旧料按时到料亮面工费|实心百福旧料按时到料亮面多少钱一克|古法实心百福手镯（满镶）旧料按时到料亮面工费	18元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_OLD_POST_MATTE	I_FEE_COMBO	E_SOLID_BAIFU	material=OLD;timing=POST;finish=MATTE	古法实心百福旧料出货后到料不亮面工费|古法实心百福旧料出货后到料不亮面多少钱一克|实心百福旧料出货后到料不亮面工费|实心百福旧料出货后到料不亮面多少钱一克|古法实心百福手镯（满镶）旧料出货后到料不亮面工费	18元/克	
+KB_QA	QA_RATE_E_SOLID_BAIFU_OLD_POST_BRIGHT	I_FEE_COMBO	E_SOLID_BAIFU	material=OLD;timing=POST;finish=BRIGHT	古法实心百福旧料出货后到料亮面工费|古法实心百福旧料出货后到料亮面多少钱一克|实心百福旧料出货后到料亮面工费|实心百福旧料出货后到料亮面多少钱一克|古法实心百福手镯（满镶）旧料出货后到料亮面工费	19元/克	
+KB_QA	QA_RATE_F_JUANCAO_NEW_ON	I_FEE_COMBO	F_JUANCAO	material=NEW;timing=ON	卷草纹板料金条按时到料工费|卷草纹板料金条按时到料多少钱一克|卷草纹手镯板料金条按时到料工费|卷草纹手镯板料金条按时到料多少钱一克|卷草纹手镯板料金条按时到料工费	8元/克	
+KB_QA	QA_RATE_F_JUANCAO_NEW_POST	I_FEE_COMBO	F_JUANCAO	material=NEW;timing=POST	卷草纹板料金条出货后到料工费|卷草纹板料金条出货后到料多少钱一克|卷草纹手镯板料金条出货后到料工费|卷草纹手镯板料金条出货后到料多少钱一克|卷草纹手镯板料金条出货后到料工费	9元/克	
+KB_QA	QA_RATE_F_JUANCAO_OLD_ON	I_FEE_COMBO	F_JUANCAO	material=OLD;timing=ON	卷草纹旧料按时到料工费|卷草纹旧料按时到料多少钱一克|卷草纹手镯旧料按时到料工费|卷草纹手镯旧料按时到料多少钱一克|卷草纹手镯旧料按时到料工费	10元/克	
+KB_QA	QA_RATE_F_JUANCAO_OLD_POST	I_FEE_COMBO	F_JUANCAO	material=OLD;timing=POST	卷草纹旧料出货后到料工费|卷草纹旧料出货后到料多少钱一克|卷草纹手镯旧料出货后到料工费|卷草纹手镯旧料出货后到料多少钱一克|卷草纹手镯旧料出货后到料工费	11元/克	
+KB_QA	QA_RATE_G_BRUSH_NEW_ON	I_FEE_COMBO	G_BRUSH	material=NEW;timing=ON	高级手工拉丝素圈板料金条按时到料工费|高级手工拉丝素圈板料金条按时到料多少钱一克|高级手工拉丝板料金条按时到料工费|高级手工拉丝板料金条按时到料多少钱一克|高级手工拉丝素圈板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_G_BRUSH_NEW_POST	I_FEE_COMBO	G_BRUSH	material=NEW;timing=POST	高级手工拉丝素圈板料金条出货后到料工费|高级手工拉丝素圈板料金条出货后到料多少钱一克|高级手工拉丝板料金条出货后到料工费|高级手工拉丝板料金条出货后到料多少钱一克|高级手工拉丝素圈板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_G_BRUSH_OLD_ON	I_FEE_COMBO	G_BRUSH	material=OLD;timing=ON	高级手工拉丝素圈旧料按时到料工费|高级手工拉丝素圈旧料按时到料多少钱一克|高级手工拉丝旧料按时到料工费|高级手工拉丝旧料按时到料多少钱一克|高级手工拉丝素圈旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_G_BRUSH_OLD_POST	I_FEE_COMBO	G_BRUSH	material=OLD;timing=POST	高级手工拉丝素圈旧料出货后到料工费|高级手工拉丝素圈旧料出货后到料多少钱一克|高级手工拉丝旧料出货后到料工费|高级手工拉丝旧料出货后到料多少钱一克|高级手工拉丝素圈旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_H_MIRROR_WAVE_NEW_ON	I_FEE_COMBO	H_MIRROR_WAVE	material=NEW;timing=ON	镜面金水波纹板料金条按时到料工费|镜面金水波纹板料金条按时到料多少钱一克|金水波纹板料金条按时到料工费|金水波纹板料金条按时到料多少钱一克|镜面金水波纹手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_H_MIRROR_WAVE_NEW_POST	I_FEE_COMBO	H_MIRROR_WAVE	material=NEW;timing=POST	镜面金水波纹板料金条出货后到料工费|镜面金水波纹板料金条出货后到料多少钱一克|金水波纹板料金条出货后到料工费|金水波纹板料金条出货后到料多少钱一克|镜面金水波纹手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_H_MIRROR_WAVE_OLD_ON	I_FEE_COMBO	H_MIRROR_WAVE	material=OLD;timing=ON	镜面金水波纹旧料按时到料工费|镜面金水波纹旧料按时到料多少钱一克|金水波纹旧料按时到料工费|金水波纹旧料按时到料多少钱一克|镜面金水波纹手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_H_MIRROR_WAVE_OLD_POST	I_FEE_COMBO	H_MIRROR_WAVE	material=OLD;timing=POST	镜面金水波纹旧料出货后到料工费|镜面金水波纹旧料出货后到料多少钱一克|金水波纹旧料出货后到料工费|金水波纹旧料出货后到料多少钱一克|镜面金水波纹手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_I_SILK_NEW_ON	I_FEE_COMBO	I_SILK	material=NEW;timing=ON	金丝锦织板料金条按时到料工费|金丝锦织板料金条按时到料多少钱一克|锦织手镯板料金条按时到料工费|锦织手镯板料金条按时到料多少钱一克|金丝锦织手镯板料金条按时到料工费	11元/克	
+KB_QA	QA_RATE_I_SILK_NEW_POST	I_FEE_COMBO	I_SILK	material=NEW;timing=POST	金丝锦织板料金条出货后到料工费|金丝锦织板料金条出货后到料多少钱一克|锦织手镯板料金条出货后到料工费|锦织手镯板料金条出货后到料多少钱一克|金丝锦织手镯板料金条出货后到料工费	12元/克	
+KB_QA	QA_RATE_I_SILK_OLD_ON	I_FEE_COMBO	I_SILK	material=OLD;timing=ON	金丝锦织旧料按时到料工费|金丝锦织旧料按时到料多少钱一克|锦织手镯旧料按时到料工费|锦织手镯旧料按时到料多少钱一克|金丝锦织手镯旧料按时到料工费	13元/克	
+KB_QA	QA_RATE_I_SILK_OLD_POST	I_FEE_COMBO	I_SILK	material=OLD;timing=POST	金丝锦织旧料出货后到料工费|金丝锦织旧料出货后到料多少钱一克|锦织手镯旧料出货后到料工费|锦织手镯旧料出货后到料多少钱一克|金丝锦织手镯旧料出货后到料工费	14元/克	
+KB_QA	QA_RATE_J_LIUZHI_NEW_ON	I_FEE_COMBO	J_LIUZHI	material=NEW;timing=ON	鎏枝映月板料金条按时到料工费|鎏枝映月板料金条按时到料多少钱一克|鎏枝映月开口贵妃板料金条按时到料工费|鎏枝映月开口贵妃板料金条按时到料多少钱一克|鎏枝映月开口贵妃镯板料金条按时到料工费	11元/克	
+KB_QA	QA_RATE_J_LIUZHI_NEW_POST	I_FEE_COMBO	J_LIUZHI	material=NEW;timing=POST	鎏枝映月板料金条出货后到料工费|鎏枝映月板料金条出货后到料多少钱一克|鎏枝映月开口贵妃板料金条出货后到料工费|鎏枝映月开口贵妃板料金条出货后到料多少钱一克|鎏枝映月开口贵妃镯板料金条出货后到料工费	12元/克	
+KB_QA	QA_RATE_J_LIUZHI_OLD_ON	I_FEE_COMBO	J_LIUZHI	material=OLD;timing=ON	鎏枝映月旧料按时到料工费|鎏枝映月旧料按时到料多少钱一克|鎏枝映月开口贵妃旧料按时到料工费|鎏枝映月开口贵妃旧料按时到料多少钱一克|鎏枝映月开口贵妃镯旧料按时到料工费	13元/克	
+KB_QA	QA_RATE_J_LIUZHI_OLD_POST	I_FEE_COMBO	J_LIUZHI	material=OLD;timing=POST	鎏枝映月旧料出货后到料工费|鎏枝映月旧料出货后到料多少钱一克|鎏枝映月开口贵妃旧料出货后到料工费|鎏枝映月开口贵妃旧料出货后到料多少钱一克|鎏枝映月开口贵妃镯旧料出货后到料工费	14元/克	
+KB_QA	QA_RATE_K_LACE_NEW_ON	I_FEE_COMBO	K_LACE	material=NEW;timing=ON	蕾丝桂冠板料金条按时到料工费|蕾丝桂冠板料金条按时到料多少钱一克|桂冠手镯板料金条按时到料工费|桂冠手镯板料金条按时到料多少钱一克|蕾丝桂冠手镯板料金条按时到料工费	15元/克	
+KB_QA	QA_RATE_K_LACE_NEW_POST	I_FEE_COMBO	K_LACE	material=NEW;timing=POST	蕾丝桂冠板料金条出货后到料工费|蕾丝桂冠板料金条出货后到料多少钱一克|桂冠手镯板料金条出货后到料工费|桂冠手镯板料金条出货后到料多少钱一克|蕾丝桂冠手镯板料金条出货后到料工费	16元/克	
+KB_QA	QA_RATE_K_LACE_OLD_ON	I_FEE_COMBO	K_LACE	material=OLD;timing=ON	蕾丝桂冠旧料按时到料工费|蕾丝桂冠旧料按时到料多少钱一克|桂冠手镯旧料按时到料工费|桂冠手镯旧料按时到料多少钱一克|蕾丝桂冠手镯旧料按时到料工费	17元/克	
+KB_QA	QA_RATE_K_LACE_OLD_POST	I_FEE_COMBO	K_LACE	material=OLD;timing=POST	蕾丝桂冠旧料出货后到料工费|蕾丝桂冠旧料出货后到料多少钱一克|桂冠手镯旧料出货后到料工费|桂冠手镯旧料出货后到料多少钱一克|蕾丝桂冠手镯旧料出货后到料工费	18元/克	
+KB_QA	QA_RATE_L_WANRONG_NEW_ON_MATTE	I_FEE_COMBO	L_WANRONG	material=NEW;timing=ON;finish=MATTE	婉容板料金条按时到料不亮面工费|婉容板料金条按时到料不亮面多少钱一克|婉容手镯板料金条按时到料不亮面工费|婉容手镯板料金条按时到料不亮面多少钱一克|婉容手镯板料金条按时到料不亮面工费	8元/克	
+KB_QA	QA_RATE_L_WANRONG_NEW_ON_BRIGHT	I_FEE_COMBO	L_WANRONG	material=NEW;timing=ON;finish=BRIGHT	婉容板料金条按时到料亮面工费|婉容板料金条按时到料亮面多少钱一克|婉容手镯板料金条按时到料亮面工费|婉容手镯板料金条按时到料亮面多少钱一克|婉容手镯板料金条按时到料亮面工费	9元/克	
+KB_QA	QA_RATE_L_WANRONG_NEW_POST_MATTE	I_FEE_COMBO	L_WANRONG	material=NEW;timing=POST;finish=MATTE	婉容板料金条出货后到料不亮面工费|婉容板料金条出货后到料不亮面多少钱一克|婉容手镯板料金条出货后到料不亮面工费|婉容手镯板料金条出货后到料不亮面多少钱一克|婉容手镯板料金条出货后到料不亮面工费	9元/克	
+KB_QA	QA_RATE_L_WANRONG_NEW_POST_BRIGHT	I_FEE_COMBO	L_WANRONG	material=NEW;timing=POST;finish=BRIGHT	婉容板料金条出货后到料亮面工费|婉容板料金条出货后到料亮面多少钱一克|婉容手镯板料金条出货后到料亮面工费|婉容手镯板料金条出货后到料亮面多少钱一克|婉容手镯板料金条出货后到料亮面工费	10元/克	
+KB_QA	QA_RATE_L_WANRONG_OLD_ON_MATTE	I_FEE_COMBO	L_WANRONG	material=OLD;timing=ON;finish=MATTE	婉容旧料按时到料不亮面工费|婉容旧料按时到料不亮面多少钱一克|婉容手镯旧料按时到料不亮面工费|婉容手镯旧料按时到料不亮面多少钱一克|婉容手镯旧料按时到料不亮面工费	10元/克	
+KB_QA	QA_RATE_L_WANRONG_OLD_ON_BRIGHT	I_FEE_COMBO	L_WANRONG	material=OLD;timing=ON;finish=BRIGHT	婉容旧料按时到料亮面工费|婉容旧料按时到料亮面多少钱一克|婉容手镯旧料按时到料亮面工费|婉容手镯旧料按时到料亮面多少钱一克|婉容手镯旧料按时到料亮面工费	11元/克	
+KB_QA	QA_RATE_L_WANRONG_OLD_POST_MATTE	I_FEE_COMBO	L_WANRONG	material=OLD;timing=POST;finish=MATTE	婉容旧料出货后到料不亮面工费|婉容旧料出货后到料不亮面多少钱一克|婉容手镯旧料出货后到料不亮面工费|婉容手镯旧料出货后到料不亮面多少钱一克|婉容手镯旧料出货后到料不亮面工费	11元/克	
+KB_QA	QA_RATE_L_WANRONG_OLD_POST_BRIGHT	I_FEE_COMBO	L_WANRONG	material=OLD;timing=POST;finish=BRIGHT	婉容旧料出货后到料亮面工费|婉容旧料出货后到料亮面多少钱一克|婉容手镯旧料出货后到料亮面工费|婉容手镯旧料出货后到料亮面多少钱一克|婉容手镯旧料出货后到料亮面工费	12元/克	
+KB_QA	QA_RATE_M_5G_FINE_NEW_ON	I_FEE_COMBO	M_5G_FINE	material=NEW;timing=ON	5G点钻莫比乌斯细板料金条按时到料工费|5G点钻莫比乌斯细板料金条按时到料多少钱一克|莫比乌斯细板料金条按时到料工费|莫比乌斯细板料金条按时到料多少钱一克|5G点钻莫比乌斯细板料金条按时到料工费	18元/克	
+KB_QA	QA_RATE_M_5G_FINE_NEW_POST	I_FEE_COMBO	M_5G_FINE	material=NEW;timing=POST	5G点钻莫比乌斯细板料金条出货后到料工费|5G点钻莫比乌斯细板料金条出货后到料多少钱一克|莫比乌斯细板料金条出货后到料工费|莫比乌斯细板料金条出货后到料多少钱一克|5G点钻莫比乌斯细板料金条出货后到料工费	19元/克	
+KB_QA	QA_RATE_M_5G_FINE_OLD_ON	I_FEE_COMBO	M_5G_FINE	material=OLD;timing=ON	5G点钻莫比乌斯细旧料按时到料工费|5G点钻莫比乌斯细旧料按时到料多少钱一克|莫比乌斯细旧料按时到料工费|莫比乌斯细旧料按时到料多少钱一克|5G点钻莫比乌斯细旧料按时到料工费	20元/克	
+KB_QA	QA_RATE_M_5G_FINE_OLD_POST	I_FEE_COMBO	M_5G_FINE	material=OLD;timing=POST	5G点钻莫比乌斯细旧料出货后到料工费|5G点钻莫比乌斯细旧料出货后到料多少钱一克|莫比乌斯细旧料出货后到料工费|莫比乌斯细旧料出货后到料多少钱一克|5G点钻莫比乌斯细旧料出货后到料工费	21元/克	
+KB_QA	QA_RATE_N_5G_COARSE_NEW_ON	I_FEE_COMBO	N_5G_COARSE	material=NEW;timing=ON	5G点钻莫比乌斯粗板料金条按时到料工费|5G点钻莫比乌斯粗板料金条按时到料多少钱一克|莫比乌斯粗板料金条按时到料工费|莫比乌斯粗板料金条按时到料多少钱一克|5G点钻莫比乌斯粗板料金条按时到料工费	18元/克	
+KB_QA	QA_RATE_N_5G_COARSE_NEW_POST	I_FEE_COMBO	N_5G_COARSE	material=NEW;timing=POST	5G点钻莫比乌斯粗板料金条出货后到料工费|5G点钻莫比乌斯粗板料金条出货后到料多少钱一克|莫比乌斯粗板料金条出货后到料工费|莫比乌斯粗板料金条出货后到料多少钱一克|5G点钻莫比乌斯粗板料金条出货后到料工费	19元/克	
+KB_QA	QA_RATE_N_5G_COARSE_OLD_ON	I_FEE_COMBO	N_5G_COARSE	material=OLD;timing=ON	5G点钻莫比乌斯粗旧料按时到料工费|5G点钻莫比乌斯粗旧料按时到料多少钱一克|莫比乌斯粗旧料按时到料工费|莫比乌斯粗旧料按时到料多少钱一克|5G点钻莫比乌斯粗旧料按时到料工费	20元/克	
+KB_QA	QA_RATE_N_5G_COARSE_OLD_POST	I_FEE_COMBO	N_5G_COARSE	material=OLD;timing=POST	5G点钻莫比乌斯粗旧料出货后到料工费|5G点钻莫比乌斯粗旧料出货后到料多少钱一克|莫比乌斯粗旧料出货后到料工费|莫比乌斯粗旧料出货后到料多少钱一克|5G点钻莫比乌斯粗旧料出货后到料工费	21元/克	
+KB_QA	QA_RATE_O_5G_HALF_CHAIN_NEW_ON	I_FEE_COMBO	O_5G_HALF_CHAIN	material=NEW;timing=ON	5G方钻半镯链板料金条按时到料工费|5G方钻半镯链板料金条按时到料多少钱一克|方钻半镯链板料金条按时到料工费|方钻半镯链板料金条按时到料多少钱一克|5G方钻半镯链板料金条按时到料工费	18元/克	
+KB_QA	QA_RATE_O_5G_HALF_CHAIN_NEW_POST	I_FEE_COMBO	O_5G_HALF_CHAIN	material=NEW;timing=POST	5G方钻半镯链板料金条出货后到料工费|5G方钻半镯链板料金条出货后到料多少钱一克|方钻半镯链板料金条出货后到料工费|方钻半镯链板料金条出货后到料多少钱一克|5G方钻半镯链板料金条出货后到料工费	19元/克	
+KB_QA	QA_RATE_O_5G_HALF_CHAIN_OLD_ON	I_FEE_COMBO	O_5G_HALF_CHAIN	material=OLD;timing=ON	5G方钻半镯链旧料按时到料工费|5G方钻半镯链旧料按时到料多少钱一克|方钻半镯链旧料按时到料工费|方钻半镯链旧料按时到料多少钱一克|5G方钻半镯链旧料按时到料工费	20元/克	
+KB_QA	QA_RATE_O_5G_HALF_CHAIN_OLD_POST	I_FEE_COMBO	O_5G_HALF_CHAIN	material=OLD;timing=POST	5G方钻半镯链旧料出货后到料工费|5G方钻半镯链旧料出货后到料多少钱一克|方钻半镯链旧料出货后到料工费|方钻半镯链旧料出货后到料多少钱一克|5G方钻半镯链旧料出货后到料工费	21元/克	
+KB_QA	QA_RATE_P_5G_GUFEI_NEW_ON	I_FEE_COMBO	P_5G_GUFEI	material=NEW;timing=ON	5G卡扣方钻贵妃板料金条按时到料工费|5G卡扣方钻贵妃板料金条按时到料多少钱一克|卡扣方钻贵妃板料金条按时到料工费|卡扣方钻贵妃板料金条按时到料多少钱一克|5G卡扣方钻贵妃镯板料金条按时到料工费	18元/克	
+KB_QA	QA_RATE_P_5G_GUFEI_NEW_POST	I_FEE_COMBO	P_5G_GUFEI	material=NEW;timing=POST	5G卡扣方钻贵妃板料金条出货后到料工费|5G卡扣方钻贵妃板料金条出货后到料多少钱一克|卡扣方钻贵妃板料金条出货后到料工费|卡扣方钻贵妃板料金条出货后到料多少钱一克|5G卡扣方钻贵妃镯板料金条出货后到料工费	19元/克	
+KB_QA	QA_RATE_P_5G_GUFEI_OLD_ON	I_FEE_COMBO	P_5G_GUFEI	material=OLD;timing=ON	5G卡扣方钻贵妃旧料按时到料工费|5G卡扣方钻贵妃旧料按时到料多少钱一克|卡扣方钻贵妃旧料按时到料工费|卡扣方钻贵妃旧料按时到料多少钱一克|5G卡扣方钻贵妃镯旧料按时到料工费	20元/克	
+KB_QA	QA_RATE_P_5G_GUFEI_OLD_POST	I_FEE_COMBO	P_5G_GUFEI	material=OLD;timing=POST	5G卡扣方钻贵妃旧料出货后到料工费|5G卡扣方钻贵妃旧料出货后到料多少钱一克|卡扣方钻贵妃旧料出货后到料工费|卡扣方钻贵妃旧料出货后到料多少钱一克|5G卡扣方钻贵妃镯旧料出货后到料工费	21元/克	
+KB_QA	QA_RATE_Q_DRAGON_NEW_ON	I_FEE_COMBO	Q_DRAGON	material=NEW;timing=ON	镜面金龙鳞板料金条按时到料工费|镜面金龙鳞板料金条按时到料多少钱一克|金龙鳞板料金条按时到料工费|金龙鳞板料金条按时到料多少钱一克|镜面金龙鳞手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_Q_DRAGON_NEW_POST	I_FEE_COMBO	Q_DRAGON	material=NEW;timing=POST	镜面金龙鳞板料金条出货后到料工费|镜面金龙鳞板料金条出货后到料多少钱一克|金龙鳞板料金条出货后到料工费|金龙鳞板料金条出货后到料多少钱一克|镜面金龙鳞手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_Q_DRAGON_OLD_ON	I_FEE_COMBO	Q_DRAGON	material=OLD;timing=ON	镜面金龙鳞旧料按时到料工费|镜面金龙鳞旧料按时到料多少钱一克|金龙鳞旧料按时到料工费|金龙鳞旧料按时到料多少钱一克|镜面金龙鳞手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_Q_DRAGON_OLD_POST	I_FEE_COMBO	Q_DRAGON	material=OLD;timing=POST	镜面金龙鳞旧料出货后到料工费|镜面金龙鳞旧料出货后到料多少钱一克|金龙鳞旧料出货后到料工费|金龙鳞旧料出货后到料多少钱一克|镜面金龙鳞手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_R_ICE_NEW_ON	I_FEE_COMBO	R_ICE	material=NEW;timing=ON	镜面金冰块板料金条按时到料工费|镜面金冰块板料金条按时到料多少钱一克|金冰块板料金条按时到料工费|金冰块板料金条按时到料多少钱一克|镜面金冰块手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_R_ICE_NEW_POST	I_FEE_COMBO	R_ICE	material=NEW;timing=POST	镜面金冰块板料金条出货后到料工费|镜面金冰块板料金条出货后到料多少钱一克|金冰块板料金条出货后到料工费|金冰块板料金条出货后到料多少钱一克|镜面金冰块手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_R_ICE_OLD_ON	I_FEE_COMBO	R_ICE	material=OLD;timing=ON	镜面金冰块旧料按时到料工费|镜面金冰块旧料按时到料多少钱一克|金冰块旧料按时到料工费|金冰块旧料按时到料多少钱一克|镜面金冰块手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_R_ICE_OLD_POST	I_FEE_COMBO	R_ICE	material=OLD;timing=POST	镜面金冰块旧料出货后到料工费|镜面金冰块旧料出货后到料多少钱一克|金冰块旧料出货后到料工费|金冰块旧料出货后到料多少钱一克|镜面金冰块手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_S_RIPPLE_NEW_ON	I_FEE_COMBO	S_RIPPLE	material=NEW;timing=ON	镜面金波光粼粼板料金条按时到料工费|镜面金波光粼粼板料金条按时到料多少钱一克|波光粼粼板料金条按时到料工费|波光粼粼板料金条按时到料多少钱一克|镜面金波光粼粼手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_S_RIPPLE_NEW_POST	I_FEE_COMBO	S_RIPPLE	material=NEW;timing=POST	镜面金波光粼粼板料金条出货后到料工费|镜面金波光粼粼板料金条出货后到料多少钱一克|波光粼粼板料金条出货后到料工费|波光粼粼板料金条出货后到料多少钱一克|镜面金波光粼粼手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_S_RIPPLE_OLD_ON	I_FEE_COMBO	S_RIPPLE	material=OLD;timing=ON	镜面金波光粼粼旧料按时到料工费|镜面金波光粼粼旧料按时到料多少钱一克|波光粼粼旧料按时到料工费|波光粼粼旧料按时到料多少钱一克|镜面金波光粼粼手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_S_RIPPLE_OLD_POST	I_FEE_COMBO	S_RIPPLE	material=OLD;timing=POST	镜面金波光粼粼旧料出货后到料工费|镜面金波光粼粼旧料出货后到料多少钱一克|波光粼粼旧料出货后到料工费|波光粼粼旧料出货后到料多少钱一克|镜面金波光粼粼手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_T_HONEY_NEW_ON	I_FEE_COMBO	T_HONEY	material=NEW;timing=ON	镜面蜂巢板料金条按时到料工费|镜面蜂巢板料金条按时到料多少钱一克|蜂巢板料金条按时到料工费|蜂巢板料金条按时到料多少钱一克|镜面蜂巢手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_T_HONEY_NEW_POST	I_FEE_COMBO	T_HONEY	material=NEW;timing=POST	镜面蜂巢板料金条出货后到料工费|镜面蜂巢板料金条出货后到料多少钱一克|蜂巢板料金条出货后到料工费|蜂巢板料金条出货后到料多少钱一克|镜面蜂巢手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_T_HONEY_OLD_ON	I_FEE_COMBO	T_HONEY	material=OLD;timing=ON	镜面蜂巢旧料按时到料工费|镜面蜂巢旧料按时到料多少钱一克|蜂巢旧料按时到料工费|蜂巢旧料按时到料多少钱一克|镜面蜂巢手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_T_HONEY_OLD_POST	I_FEE_COMBO	T_HONEY	material=OLD;timing=POST	镜面蜂巢旧料出货后到料工费|镜面蜂巢旧料出货后到料多少钱一克|蜂巢旧料出货后到料工费|蜂巢旧料出货后到料多少钱一克|镜面蜂巢手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_U_SNAKE_NEW_ON	I_FEE_COMBO	U_SNAKE	material=NEW;timing=ON	蛇镯板料金条按时到料工费|蛇镯板料金条按时到料多少钱一克|蛇镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_U_SNAKE_NEW_POST	I_FEE_COMBO	U_SNAKE	material=NEW;timing=POST	蛇镯板料金条出货后到料工费|蛇镯板料金条出货后到料多少钱一克|蛇镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_U_SNAKE_OLD_ON	I_FEE_COMBO	U_SNAKE	material=OLD;timing=ON	蛇镯旧料按时到料工费|蛇镯旧料按时到料多少钱一克|蛇镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_U_SNAKE_OLD_POST	I_FEE_COMBO	U_SNAKE	material=OLD;timing=POST	蛇镯旧料出货后到料工费|蛇镯旧料出货后到料多少钱一克|蛇镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_V_LOTUS_NEW_ON	I_FEE_COMBO	V_LOTUS	material=NEW;timing=ON	荷叶三角板料金条按时到料工费|荷叶三角板料金条按时到料多少钱一克|荷叶三角手镯板料金条按时到料工费|荷叶三角手镯板料金条按时到料多少钱一克|荷叶三角手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_V_LOTUS_NEW_POST	I_FEE_COMBO	V_LOTUS	material=NEW;timing=POST	荷叶三角板料金条出货后到料工费|荷叶三角板料金条出货后到料多少钱一克|荷叶三角手镯板料金条出货后到料工费|荷叶三角手镯板料金条出货后到料多少钱一克|荷叶三角手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_V_LOTUS_OLD_ON	I_FEE_COMBO	V_LOTUS	material=OLD;timing=ON	荷叶三角旧料按时到料工费|荷叶三角旧料按时到料多少钱一克|荷叶三角手镯旧料按时到料工费|荷叶三角手镯旧料按时到料多少钱一克|荷叶三角手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_V_LOTUS_OLD_POST	I_FEE_COMBO	V_LOTUS	material=OLD;timing=POST	荷叶三角旧料出货后到料工费|荷叶三角旧料出货后到料多少钱一克|荷叶三角手镯旧料出货后到料工费|荷叶三角手镯旧料出货后到料多少钱一克|荷叶三角手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_W_MI_NEW_ON	I_FEE_COMBO	W_MI	material=NEW;timing=ON	米字卡镯板料金条按时到料工费|米字卡镯板料金条按时到料多少钱一克|米字板料金条按时到料工费|米字板料金条按时到料多少钱一克|米字卡镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_W_MI_NEW_POST	I_FEE_COMBO	W_MI	material=NEW;timing=POST	米字卡镯板料金条出货后到料工费|米字卡镯板料金条出货后到料多少钱一克|米字板料金条出货后到料工费|米字板料金条出货后到料多少钱一克|米字卡镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_W_MI_OLD_ON	I_FEE_COMBO	W_MI	material=OLD;timing=ON	米字卡镯旧料按时到料工费|米字卡镯旧料按时到料多少钱一克|米字旧料按时到料工费|米字旧料按时到料多少钱一克|米字卡镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_W_MI_OLD_POST	I_FEE_COMBO	W_MI	material=OLD;timing=POST	米字卡镯旧料出货后到料工费|米字卡镯旧料出货后到料多少钱一克|米字旧料出货后到料工费|米字旧料出货后到料多少钱一克|米字卡镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_X_BROKEN_NEW_ON	I_FEE_COMBO	X_BROKEN	material=NEW;timing=ON	碎金万两板料金条按时到料工费|碎金万两板料金条按时到料多少钱一克|碎金万两手镯板料金条按时到料工费	10元/克	
+KB_QA	QA_RATE_X_BROKEN_NEW_POST	I_FEE_COMBO	X_BROKEN	material=NEW;timing=POST	碎金万两板料金条出货后到料工费|碎金万两板料金条出货后到料多少钱一克|碎金万两手镯板料金条出货后到料工费	11元/克	
+KB_QA	QA_RATE_X_BROKEN_OLD_ON	I_FEE_COMBO	X_BROKEN	material=OLD;timing=ON	碎金万两旧料按时到料工费|碎金万两旧料按时到料多少钱一克|碎金万两手镯旧料按时到料工费	12元/克	
+KB_QA	QA_RATE_X_BROKEN_OLD_POST	I_FEE_COMBO	X_BROKEN	material=OLD;timing=POST	碎金万两旧料出货后到料工费|碎金万两旧料出货后到料多少钱一克|碎金万两手镯旧料出货后到料工费	13元/克	
+KB_QA	QA_RATE_Y_TWIST_CHAIN_NEW_ON	I_FEE_COMBO	Y_TWIST_CHAIN	material=NEW;timing=ON	麻花蕾丝镯链板料金条按时到料工费|麻花蕾丝镯链板料金条按时到料多少钱一克|蕾丝镯链板料金条按时到料工费|蕾丝镯链板料金条按时到料多少钱一克|麻花蕾丝镯链板料金条按时到料工费	18元/克	
+KB_QA	QA_RATE_Y_TWIST_CHAIN_NEW_POST	I_FEE_COMBO	Y_TWIST_CHAIN	material=NEW;timing=POST	麻花蕾丝镯链板料金条出货后到料工费|麻花蕾丝镯链板料金条出货后到料多少钱一克|蕾丝镯链板料金条出货后到料工费|蕾丝镯链板料金条出货后到料多少钱一克|麻花蕾丝镯链板料金条出货后到料工费	19元/克	
+KB_QA	QA_RATE_Y_TWIST_CHAIN_OLD_ON	I_FEE_COMBO	Y_TWIST_CHAIN	material=OLD;timing=ON	麻花蕾丝镯链旧料按时到料工费|麻花蕾丝镯链旧料按时到料多少钱一克|蕾丝镯链旧料按时到料工费|蕾丝镯链旧料按时到料多少钱一克|麻花蕾丝镯链旧料按时到料工费	20元/克	
+KB_QA	QA_RATE_Y_TWIST_CHAIN_OLD_POST	I_FEE_COMBO	Y_TWIST_CHAIN	material=OLD;timing=POST	麻花蕾丝镯链旧料出货后到料工费|麻花蕾丝镯链旧料出货后到料多少钱一克|蕾丝镯链旧料出货后到料工费|蕾丝镯链旧料出货后到料多少钱一克|麻花蕾丝镯链旧料出货后到料工费	21元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_NEW_ON_MATTE	I_FEE_COMBO	Z_OPEN_GUFEI	material=NEW;timing=ON;finish=MATTE	开口贵妃莫桑泥鳅背板料金条按时到料不亮面工费|开口贵妃莫桑泥鳅背板料金条按时到料不亮面多少钱一克|开口贵妃泥鳅背板料金条按时到料不亮面工费|开口贵妃泥鳅背板料金条按时到料不亮面多少钱一克|开口贵妃莫桑泥鳅背板料金条按时到料不亮面工费	12元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_NEW_ON_BRIGHT	I_FEE_COMBO	Z_OPEN_GUFEI	material=NEW;timing=ON;finish=BRIGHT	开口贵妃莫桑泥鳅背板料金条按时到料亮面工费|开口贵妃莫桑泥鳅背板料金条按时到料亮面多少钱一克|开口贵妃泥鳅背板料金条按时到料亮面工费|开口贵妃泥鳅背板料金条按时到料亮面多少钱一克|开口贵妃莫桑泥鳅背板料金条按时到料亮面工费	13元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_NEW_POST_MATTE	I_FEE_COMBO	Z_OPEN_GUFEI	material=NEW;timing=POST;finish=MATTE	开口贵妃莫桑泥鳅背板料金条出货后到料不亮面工费|开口贵妃莫桑泥鳅背板料金条出货后到料不亮面多少钱一克|开口贵妃泥鳅背板料金条出货后到料不亮面工费|开口贵妃泥鳅背板料金条出货后到料不亮面多少钱一克|开口贵妃莫桑泥鳅背板料金条出货后到料不亮面工费	13元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_NEW_POST_BRIGHT	I_FEE_COMBO	Z_OPEN_GUFEI	material=NEW;timing=POST;finish=BRIGHT	开口贵妃莫桑泥鳅背板料金条出货后到料亮面工费|开口贵妃莫桑泥鳅背板料金条出货后到料亮面多少钱一克|开口贵妃泥鳅背板料金条出货后到料亮面工费|开口贵妃泥鳅背板料金条出货后到料亮面多少钱一克|开口贵妃莫桑泥鳅背板料金条出货后到料亮面工费	14元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_OLD_ON_MATTE	I_FEE_COMBO	Z_OPEN_GUFEI	material=OLD;timing=ON;finish=MATTE	开口贵妃莫桑泥鳅背旧料按时到料不亮面工费|开口贵妃莫桑泥鳅背旧料按时到料不亮面多少钱一克|开口贵妃泥鳅背旧料按时到料不亮面工费|开口贵妃泥鳅背旧料按时到料不亮面多少钱一克|开口贵妃莫桑泥鳅背旧料按时到料不亮面工费	14元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_OLD_ON_BRIGHT	I_FEE_COMBO	Z_OPEN_GUFEI	material=OLD;timing=ON;finish=BRIGHT	开口贵妃莫桑泥鳅背旧料按时到料亮面工费|开口贵妃莫桑泥鳅背旧料按时到料亮面多少钱一克|开口贵妃泥鳅背旧料按时到料亮面工费|开口贵妃泥鳅背旧料按时到料亮面多少钱一克|开口贵妃莫桑泥鳅背旧料按时到料亮面工费	15元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_OLD_POST_MATTE	I_FEE_COMBO	Z_OPEN_GUFEI	material=OLD;timing=POST;finish=MATTE	开口贵妃莫桑泥鳅背旧料出货后到料不亮面工费|开口贵妃莫桑泥鳅背旧料出货后到料不亮面多少钱一克|开口贵妃泥鳅背旧料出货后到料不亮面工费|开口贵妃泥鳅背旧料出货后到料不亮面多少钱一克|开口贵妃莫桑泥鳅背旧料出货后到料不亮面工费	15元/克	
+KB_QA	QA_RATE_Z_OPEN_GUFEI_OLD_POST_BRIGHT	I_FEE_COMBO	Z_OPEN_GUFEI	material=OLD;timing=POST;finish=BRIGHT	开口贵妃莫桑泥鳅背旧料出货后到料亮面工费|开口贵妃莫桑泥鳅背旧料出货后到料亮面多少钱一克|开口贵妃泥鳅背旧料出货后到料亮面工费|开口贵妃泥鳅背旧料出货后到料亮面多少钱一克|开口贵妃莫桑泥鳅背旧料出货后到料亮面工费	16元/克	
+KB_QA	QA_CIRCLE_A_WHEEL	I_CIRCLE_RANGE	A_WHEEL	circle_range	轮胎圈口范围|古法轮胎能做多大圈口|轮胎手镯圈口能做多少	50-64	
+KB_QA	QA_CIRCLE_B_NIQIU	I_CIRCLE_RANGE	B_NIQIU	circle_range	泥鳅背圈口范围|古法泥鳅背能做多大圈口	53-64	
+KB_QA	QA_CIRCLE_C_ROUND	I_CIRCLE_RANGE	C_ROUND	circle_range	圆棍空心圈口范围|素圈空心圈口范围|空心素圈能做多大圈口	47-64	
+KB_QA	QA_CIRCLE_D_SQUARE	I_CIRCLE_RANGE	D_SQUARE	circle_range	空心方镯圈口范围|方镯能做多大圈口|古法空心方镯圈口范围	50-64	
+KB_QA	QA_W2G_A_WHEEL_8	I_W2G	A_WHEEL	width=8	轮胎卡8多少克|轮胎卡8多少g|轮胎8mm多少克|轮胎卡8克重	25-35g	
+KB_QA	QA_W2G_A_WHEEL_9	I_W2G	A_WHEEL	width=9	轮胎卡9多少克|轮胎卡9多少g|轮胎9mm多少克|轮胎卡9克重	35-45g	
+KB_QA	QA_W2G_A_WHEEL_10	I_W2G	A_WHEEL	width=10	轮胎卡10多少克|轮胎卡10多少g|轮胎10mm多少克|轮胎卡10克重	45-55g	
+KB_QA	QA_W2G_A_WHEEL_11	I_W2G	A_WHEEL	width=11	轮胎卡11多少克|轮胎卡11多少g|轮胎11mm多少克|轮胎卡11克重	55-60g	
+KB_QA	QA_W2G_A_WHEEL_12	I_W2G	A_WHEEL	width=12	轮胎卡12多少克|轮胎卡12多少g|轮胎12mm多少克|轮胎卡12克重	60-70g	
+KB_QA	QA_W2G_A_WHEEL_13	I_W2G	A_WHEEL	width=13	轮胎卡13多少克|轮胎卡13多少g|轮胎13mm多少克|轮胎卡13克重	70-80g	
+KB_QA	QA_W2G_A_WHEEL_14	I_W2G	A_WHEEL	width=14	轮胎卡14多少克|轮胎卡14多少g|轮胎14mm多少克|轮胎卡14克重	80-90g	
+KB_QA	QA_W2G_A_WHEEL_15	I_W2G	A_WHEEL	width=15	轮胎卡15多少克|轮胎卡15多少g|轮胎15mm多少克|轮胎卡15克重	90-130g	
+KB_QA	QA_W2G_B_NIQIU_6	I_W2G	B_NIQIU	width=6	泥鳅背卡6多少克|泥鳅背6mm多少克|泥鳅背卡6克重	20-25g	
+KB_QA	QA_W2G_B_NIQIU_7	I_W2G	B_NIQIU	width=7	泥鳅背卡7多少克|泥鳅背7mm多少克|泥鳅背卡7克重	25-30g	
+KB_QA	QA_W2G_B_NIQIU_8	I_W2G	B_NIQIU	width=8	泥鳅背卡8多少克|泥鳅背8mm多少克|泥鳅背卡8克重	30-35g	
+KB_QA	QA_W2G_B_NIQIU_9	I_W2G	B_NIQIU	width=9	泥鳅背卡9多少克|泥鳅背9mm多少克|泥鳅背卡9克重	35-40g	
+KB_QA	QA_W2G_B_NIQIU_10	I_W2G	B_NIQIU	width=10	泥鳅背卡10多少克|泥鳅背10mm多少克|泥鳅背卡10克重	40-45g	
+KB_QA	QA_W2G_B_NIQIU_12	I_W2G	B_NIQIU	width=12	泥鳅背卡12多少克|泥鳅背12mm多少克|泥鳅背卡12克重	50-60g	
+KB_QA	QA_W2G_B_NIQIU_14	I_W2G	B_NIQIU	width=14	泥鳅背卡14多少克|泥鳅背14mm多少克|泥鳅背卡14克重	80-90g	
+KB_QA	QA_W2G_C_ROUND_3_0_3_5	I_W2G	C_ROUND	width=3.0-3.5	圆棍空心3.0-3.5mm多少克|素圈空心3.0-3.5mm多少克|空心素圈3.0-3.5克重	8-12g	
+KB_QA	QA_W2G_C_ROUND_3_5_4_0	I_W2G	C_ROUND	width=3.5-4.0	圆棍空心3.5-4.0mm多少克|素圈空心3.5-4.0mm多少克|空心素圈3.5-4.0克重	13-25g	
+KB_QA	QA_W2G_C_ROUND_4_0_4_5	I_W2G	C_ROUND	width=4.0-4.5	圆棍空心4.0-4.5mm多少克|素圈空心4.0-4.5mm多少克|空心素圈4.0-4.5克重	25-30g	
+KB_QA	QA_W2G_C_ROUND_4_5_5_0	I_W2G	C_ROUND	width=4.5-5.0	圆棍空心4.5-5.0mm多少克|素圈空心4.5-5.0mm多少克|空心素圈4.5-5.0克重	30-35g	
+KB_QA	QA_W2G_C_ROUND_5_0_5_5	I_W2G	C_ROUND	width=5.0-5.5	圆棍空心5.0-5.5mm多少克|素圈空心5.0-5.5mm多少克|空心素圈5.0-5.5克重	35-45g	
+KB_QA	QA_W2G_C_ROUND_5_5_6_0	I_W2G	C_ROUND	width=5.5-6.0	圆棍空心5.5-6.0mm多少克|素圈空心5.5-6.0mm多少克|空心素圈5.5-6.0克重	45-60g	
+KB_QA	QA_W2G_D_SQUARE_4_5	I_W2G	D_SQUARE	width=4.5	方镯卡4.5多少克|空心方镯4.5mm多少克|方镯卡4.5克重	20-25g	
+KB_QA	QA_W2G_D_SQUARE_5_0	I_W2G	D_SQUARE	width=5.0	方镯卡5.0多少克|空心方镯5.0mm多少克|方镯卡5.0克重	25-30g	
+KB_QA	QA_W2G_D_SQUARE_5_5	I_W2G	D_SQUARE	width=5.5	方镯卡5.5多少克|空心方镯5.5mm多少克|方镯卡5.5克重	30-35g	
+KB_QA	QA_W2G_D_SQUARE_6_0	I_W2G	D_SQUARE	width=6.0	方镯卡6.0多少克|空心方镯6.0mm多少克|方镯卡6.0克重	35-40g	
+KB_QA	QA_W2G_D_SQUARE_7_0	I_W2G	D_SQUARE	width=7.0	方镯卡7.0多少克|空心方镯7.0mm多少克|方镯卡7.0克重	40-45g	
+KB_QA	QA_W2G_D_SQUARE_8_0	I_W2G	D_SQUARE	width=8.0	方镯卡8.0多少克|空心方镯8.0mm多少克|方镯卡8.0克重	50-60g	
+KB_QA	QA_W2G_D_SQUARE_9_0	I_W2G	D_SQUARE	width=9.0	方镯卡9.0多少克|空心方镯9.0mm多少克|方镯卡9.0克重	65-75g	
+KB_QA	QA_W2G_D_SQUARE_10_0	I_W2G	D_SQUARE	width=10.0	方镯卡10.0多少克|空心方镯10.0mm多少克|方镯卡10.0克重	75-85g	
+KB_QA	QA_G2W_A_WHEEL_25_35	I_G2W	A_WHEEL	weight_range=25-35	轮胎30克能做卡几|轮胎30g能做卡几|轮胎25-35克能做卡几|轮胎30克做多宽	卡8	
+KB_QA	QA_G2W_A_WHEEL_35_45	I_G2W	A_WHEEL	weight_range=35-45	轮胎40克能做卡几|轮胎40g能做卡几|轮胎35-45克能做卡几|轮胎40克做多宽	卡9	
+KB_QA	QA_G2W_A_WHEEL_45_55	I_G2W	A_WHEEL	weight_range=45-55	轮胎50克能做卡几|轮胎50g能做卡几|轮胎45-55克能做卡几|轮胎50克做多宽	卡10	
+KB_QA	QA_G2W_A_WHEEL_55_60	I_G2W	A_WHEEL	weight_range=55-60	轮胎58克能做卡几|轮胎58g能做卡几|轮胎55-60克能做卡几|轮胎58克做多宽	卡11	
+KB_QA	QA_G2W_A_WHEEL_60_70	I_G2W	A_WHEEL	weight_range=60-70	轮胎65克能做卡几|轮胎65g能做卡几|轮胎60-70克能做卡几|轮胎65克做多宽	卡12	
+KB_QA	QA_G2W_A_WHEEL_70_80	I_G2W	A_WHEEL	weight_range=70-80	轮胎75克能做卡几|轮胎75g能做卡几|轮胎70-80克能做卡几|轮胎75克做多宽	卡13	
+KB_QA	QA_G2W_A_WHEEL_80_90	I_G2W	A_WHEEL	weight_range=80-90	轮胎85克能做卡几|轮胎85g能做卡几|轮胎80-90克能做卡几|轮胎85克做多宽	卡14	
+KB_QA	QA_G2W_A_WHEEL_90_130	I_G2W	A_WHEEL	weight_range=90-130	轮胎110克能做卡几|轮胎110g能做卡几|轮胎90-130克能做卡几|轮胎110克做多宽	卡15	
+KB_QA	QA_G2W_B_NIQIU_20_25	I_G2W	B_NIQIU	weight_range=20-25	泥鳅背22克能做卡几|泥鳅背20-25克能做卡几|泥鳅背22克做多宽	卡6	
+KB_QA	QA_G2W_B_NIQIU_25_30	I_G2W	B_NIQIU	weight_range=25-30	泥鳅背28克能做卡几|泥鳅背25-30克能做卡几|泥鳅背28克做多宽	卡7	
+KB_QA	QA_G2W_B_NIQIU_30_35	I_G2W	B_NIQIU	weight_range=30-35	泥鳅背32克能做卡几|泥鳅背30-35克能做卡几|泥鳅背32克做多宽	卡8	
+KB_QA	QA_G2W_B_NIQIU_35_40	I_G2W	B_NIQIU	weight_range=35-40	泥鳅背38克能做卡几|泥鳅背35-40克能做卡几|泥鳅背38克做多宽	卡9	
+KB_QA	QA_G2W_B_NIQIU_40_45	I_G2W	B_NIQIU	weight_range=40-45	泥鳅背42克能做卡几|泥鳅背40-45克能做卡几|泥鳅背42克做多宽	卡10	
+KB_QA	QA_G2W_B_NIQIU_50_60	I_G2W	B_NIQIU	weight_range=50-60	泥鳅背55克能做卡几|泥鳅背50-60克能做卡几|泥鳅背55克做多宽	卡12	
+KB_QA	QA_G2W_B_NIQIU_80_90	I_G2W	B_NIQIU	weight_range=80-90	泥鳅背85克能做卡几|泥鳅背80-90克能做卡几|泥鳅背85克做多宽	卡14	
+KB_QA	QA_G2W_C_ROUND_8_12	I_G2W	C_ROUND	weight_range=8-12	圆棍空心10克做多粗|素圈空心10克做多粗|空心素圈8-12克做多粗	3.0-3.5mm	
+KB_QA	QA_G2W_C_ROUND_13_25	I_G2W	C_ROUND	weight_range=13-25	圆棍空心19克做多粗|素圈空心19克做多粗|空心素圈13-25克做多粗	3.5-4.0mm	
+KB_QA	QA_G2W_C_ROUND_25_30	I_G2W	C_ROUND	weight_range=25-30	圆棍空心28克做多粗|素圈空心28克做多粗|空心素圈25-30克做多粗	4.0-4.5mm	
+KB_QA	QA_G2W_C_ROUND_30_35	I_G2W	C_ROUND	weight_range=30-35	圆棍空心32克做多粗|素圈空心32克做多粗|空心素圈30-35克做多粗	4.5-5.0mm	
+KB_QA	QA_G2W_C_ROUND_35_45	I_G2W	C_ROUND	weight_range=35-45	圆棍空心40克做多粗|素圈空心40克做多粗|空心素圈35-45克做多粗	5.0-5.5mm	
+KB_QA	QA_G2W_C_ROUND_45_60	I_G2W	C_ROUND	weight_range=45-60	圆棍空心52克做多粗|素圈空心52克做多粗|空心素圈45-60克做多粗	5.5-6.0mm	
+KB_QA	QA_G2W_D_SQUARE_20_25	I_G2W	D_SQUARE	weight_range=20-25	方镯22克能做卡几|方镯20-25克能做卡几|方镯22克做多宽	卡4.5	
+KB_QA	QA_G2W_D_SQUARE_25_30	I_G2W	D_SQUARE	weight_range=25-30	方镯28克能做卡几|方镯25-30克能做卡几|方镯28克做多宽	卡5.0	
+KB_QA	QA_G2W_D_SQUARE_30_35	I_G2W	D_SQUARE	weight_range=30-35	方镯32克能做卡几|方镯30-35克能做卡几|方镯32克做多宽	卡5.5	
+KB_QA	QA_G2W_D_SQUARE_35_40	I_G2W	D_SQUARE	weight_range=35-40	方镯38克能做卡几|方镯35-40克能做卡几|方镯38克做多宽	卡6.0	
+KB_QA	QA_G2W_D_SQUARE_40_45	I_G2W	D_SQUARE	weight_range=40-45	方镯42克能做卡几|方镯40-45克能做卡几|方镯42克做多宽	卡7.0	
+KB_QA	QA_G2W_D_SQUARE_50_60	I_G2W	D_SQUARE	weight_range=50-60	方镯55克能做卡几|方镯50-60克能做卡几|方镯55克做多宽	卡8.0	
+KB_QA	QA_G2W_D_SQUARE_65_75	I_G2W	D_SQUARE	weight_range=65-75	方镯70克能做卡几|方镯65-75克能做卡几|方镯70克做多宽	卡9.0	
+KB_QA	QA_G2W_D_SQUARE_75_85	I_G2W	D_SQUARE	weight_range=75-85	方镯80克能做卡几|方镯75-85克能做卡几|方镯80克做多宽	卡10.0	
+KB_QA	QA_G2W_A_WHEEL_OUT	I_G2W	A_WHEEL	out_of_range	轮胎20克能做卡几|轮胎150克能做卡几	超出标准	
+KB_QA	QA_G2W_B_NIQIU_OUT	I_G2W	B_NIQIU	out_of_range	泥鳅背15克能做卡几|泥鳅背100克能做卡几	超出标准	
+KB_QA	QA_G2W_C_ROUND_OUT	I_G2W	C_ROUND	out_of_range	圆棍空心5克做多粗|圆棍空心80克做多粗	超出标准	
+KB_QA	QA_G2W_D_SQUARE_OUT	I_G2W	D_SQUARE	out_of_range	方镯15克能做卡几|方镯90克能做卡几	超出标准	
+KB_QA	QA_SAMPLE_E_SOLID_BAIFU_4	I_SAMPLE_WEIGHT	E_SOLID_BAIFU	sample_size=56	古法实心百福手镯（满镶）卡4多少克|古法实心百福手镯（满镶）4mm多少克|古法实心百福手镯（满镶）样品卡4多少克	样品56圈 卡4：35g	
+KB_QA	QA_SAMPLE_E_SOLID_BAIFU_5	I_SAMPLE_WEIGHT	E_SOLID_BAIFU	sample_size=56	古法实心百福手镯（满镶）卡5多少克|古法实心百福手镯（满镶）5mm多少克|古法实心百福手镯（满镶）样品卡5多少克	样品56圈 卡5：45g	
+KB_QA	QA_SAMPLE_F_JUANCAO_3_5	I_SAMPLE_WEIGHT	F_JUANCAO	sample_size=56	卷草纹手镯卡3.5多少克|卷草纹手镯3.5mm多少克|卷草纹手镯样品卡3.5多少克	样品56圈 卡3.5：25-30g	
+KB_QA	QA_SAMPLE_F_JUANCAO_4	I_SAMPLE_WEIGHT	F_JUANCAO	sample_size=56	卷草纹手镯卡4多少克|卷草纹手镯4mm多少克|卷草纹手镯样品卡4多少克	样品56圈 卡4：30-35g	
+KB_QA	QA_SAMPLE_F_JUANCAO_4_5	I_SAMPLE_WEIGHT	F_JUANCAO	sample_size=56	卷草纹手镯卡4.5多少克|卷草纹手镯4.5mm多少克|卷草纹手镯样品卡4.5多少克	样品56圈 卡4.5：35-40g	
+KB_QA	QA_SAMPLE_F_JUANCAO_5	I_SAMPLE_WEIGHT	F_JUANCAO	sample_size=56	卷草纹手镯卡5多少克|卷草纹手镯5mm多少克|卷草纹手镯样品卡5多少克	样品56圈 卡5：45-50g	
+KB_QA	QA_SAMPLE_G_BRUSH_3	I_SAMPLE_WEIGHT	G_BRUSH	sample_size=56	高级手工拉丝素圈卡3多少克|高级手工拉丝素圈3mm多少克|高级手工拉丝素圈样品卡3多少克	样品56圈 卡3：20g	
+KB_QA	QA_SAMPLE_H_MIRROR_WAVE_4	I_SAMPLE_WEIGHT	H_MIRROR_WAVE	sample_size=56	镜面金水波纹手镯卡4多少克|镜面金水波纹手镯4mm多少克|镜面金水波纹手镯样品卡4多少克	样品56圈 卡4：20-22g	
+KB_QA	QA_SAMPLE_I_SILK_8	I_SAMPLE_WEIGHT	I_SILK	sample_size=56	金丝锦织手镯卡8多少克|金丝锦织手镯8mm多少克|金丝锦织手镯样品卡8多少克	样品56圈 卡8：34g	
+KB_QA	QA_SAMPLE_J_LIUZHI_NA	I_SAMPLE_WEIGHT	J_LIUZHI	sample_size=手围13	鎏枝映月开口贵妃镯样品多少克|鎏枝映月开口贵妃镯克重|鎏枝映月开口贵妃镯多少克	样品手围13：36g	
+KB_QA	QA_SAMPLE_K_LACE_7_3	I_SAMPLE_WEIGHT	K_LACE	sample_size=56	蕾丝桂冠手镯卡7.3多少克|蕾丝桂冠手镯7.3mm多少克|蕾丝桂冠手镯样品卡7.3多少克	样品56圈 卡7.3：34g	
+KB_QA	QA_SAMPLE_L_WANRONG_7	I_SAMPLE_WEIGHT	L_WANRONG	sample_size=56	婉容手镯卡7多少克|婉容手镯7mm多少克|婉容手镯样品卡7多少克	样品56圈 卡7：38g	
+KB_QA	QA_SAMPLE_M_5G_FINE_3_2	I_SAMPLE_WEIGHT	M_5G_FINE	sample_size=55	5G点钻莫比乌斯细卡3.2多少克|5G点钻莫比乌斯细3.2mm多少克|5G点钻莫比乌斯细样品卡3.2多少克	样品55圈 卡3.2：13g	
+KB_QA	QA_SAMPLE_N_5G_COARSE_4	I_SAMPLE_WEIGHT	N_5G_COARSE	sample_size=54	5G点钻莫比乌斯粗卡4多少克|5G点钻莫比乌斯粗4mm多少克|5G点钻莫比乌斯粗样品卡4多少克	样品54圈 卡4：21g	
+KB_QA	QA_SAMPLE_O_5G_HALF_CHAIN_NA	I_SAMPLE_WEIGHT	O_5G_HALF_CHAIN	sample_size=手围14.5	5G方钻半镯链样品多少克|5G方钻半镯链克重|5G方钻半镯链多少克	样品手围14.5：15g	
+KB_QA	QA_SAMPLE_P_5G_GUFEI_3	I_SAMPLE_WEIGHT	P_5G_GUFEI	sample_size=55	5G卡扣方钻贵妃镯卡3多少克|5G卡扣方钻贵妃镯3mm多少克|5G卡扣方钻贵妃镯样品卡3多少克	样品55圈 卡3：22g	
+KB_QA	QA_SAMPLE_Q_DRAGON_2_9	I_SAMPLE_WEIGHT	Q_DRAGON	sample_size=56	镜面金龙鳞手镯卡2.9多少克|镜面金龙鳞手镯2.9mm多少克|镜面金龙鳞手镯样品卡2.9多少克	样品56圈 卡2.9：16g	
+KB_QA	QA_SAMPLE_R_ICE_2_9	I_SAMPLE_WEIGHT	R_ICE	sample_size=56	镜面金冰块手镯卡2.9多少克|镜面金冰块手镯2.9mm多少克|镜面金冰块手镯样品卡2.9多少克	样品56圈 卡2.9：17g	
+KB_QA	QA_SAMPLE_S_RIPPLE_3	I_SAMPLE_WEIGHT	S_RIPPLE	sample_size=56	镜面金波光粼粼手镯卡3多少克|镜面金波光粼粼手镯3mm多少克|镜面金波光粼粼手镯样品卡3多少克	样品56圈 卡3：15g	
+KB_QA	QA_SAMPLE_T_HONEY_3	I_SAMPLE_WEIGHT	T_HONEY	sample_size=56	镜面蜂巢手镯卡3多少克|镜面蜂巢手镯3mm多少克|镜面蜂巢手镯样品卡3多少克	样品56圈 卡3：15g	
+KB_QA	QA_SAMPLE_U_SNAKE_4_5	I_SAMPLE_WEIGHT	U_SNAKE	sample_size=56	蛇镯卡4.5多少克|蛇镯4.5mm多少克|蛇镯样品卡4.5多少克	样品56圈 卡4.5：21g	
+KB_QA	QA_SAMPLE_V_LOTUS_3_8	I_SAMPLE_WEIGHT	V_LOTUS	sample_size=56	荷叶三角手镯卡3.8多少克|荷叶三角手镯3.8mm多少克|荷叶三角手镯样品卡3.8多少克	样品56圈 卡3.8：23g	
+KB_QA	QA_SAMPLE_W_MI_4	I_SAMPLE_WEIGHT	W_MI	sample_size=56	米字卡镯卡4多少克|米字卡镯4mm多少克|米字卡镯样品卡4多少克	样品56圈 卡4：23g	
+KB_QA	QA_SAMPLE_X_BROKEN_4	I_SAMPLE_WEIGHT	X_BROKEN	sample_size=56	碎金万两手镯卡4多少克|碎金万两手镯4mm多少克|碎金万两手镯样品卡4多少克	样品56圈 卡4：22g	
+KB_QA	QA_SAMPLE_Y_TWIST_CHAIN_NA	I_SAMPLE_WEIGHT	Y_TWIST_CHAIN	sample_size=手围14.5+2	麻花蕾丝镯链样品多少克|麻花蕾丝镯链克重|麻花蕾丝镯链多少克	样品手围14.5+2：18g	
+KB_QA	QA_ADDON_K	I_ADDON	K_LACE	addon	蕾丝桂冠附加|蕾丝桂冠莫桑附加|桂冠手镯附加	88元/件	
+KB_QA	QA_ADDON_M	I_ADDON	M_5G_FINE	addon	莫比乌斯细附加|5G莫比乌斯细附加	25元/件	
+KB_QA	QA_ADDON_N	I_ADDON	N_5G_COARSE	addon	莫比乌斯粗附加|5G莫比乌斯粗附加	150元/件	
+KB_QA	QA_ADDON_O	I_ADDON	O_5G_HALF_CHAIN	addon	方钻半镯链附加|5G方钻半镯链附加	160元/件	
+KB_QA	QA_ADDON_P_FULL	I_ADDON	P_5G_GUFEI	addon_full	方钻贵妃满钻附加|满钻附加	320元/件	
+KB_QA	QA_ADDON_P_HALF	I_ADDON	P_5G_GUFEI	addon_half	方钻贵妃半圈钻附加|半圈钻附加	170元/件	
+KB_QA	QA_ADDON_Y	I_ADDON	Y_TWIST_CHAIN	addon	麻花蕾丝镯链附加|蕾丝镯链附加	190元/件	
+KB_QA	QA_ADDON_E	I_ADDON	E_SOLID_BAIFU	addon	实心百福莫桑附加|百福满镶附加	0元/件	
+KB_QA	QA_SIZE_Y	I_SIZE_OPTIONS	Y_TWIST_CHAIN	size_options	麻花蕾丝镯链能定多大|麻花蕾丝镯链能做多长|蕾丝镯链尺寸有哪些	13+2/14.5+2/15+2	
+KB_QA	QA_SIZE_Z	I_SIZE_OPTIONS	Z_OPEN_GUFEI	size_custom	开口贵妃莫桑泥鳅背尺寸|开口贵妃莫桑泥鳅背圈口|开口贵妃莫桑泥鳅背能做多大	人工定制	
+KB_QA	QA_FEE_C_GENERIC	I_FEE_BASE	C_ROUND	base_fee_generic	圆棍空心工费|素圈空心工费|空心素圈工费|圆棍空心多少钱一克	圆棍/素圈空心：20g起2元/克（后寄3元/克） 约15g3元/克（后寄4元/克） 如需亮面+1元/克	
