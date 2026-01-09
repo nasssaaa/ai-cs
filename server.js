@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
-const OpenAI = require('openai');
 const WebSocket = require('ws');
 const http = require('http');
 const axios = require('axios');
@@ -15,16 +14,15 @@ if (!fs.existsSync(logsDir)) {
 }
 
 //ai应用调用函数
-async function getAiResponse(prompt, memoryId) {
+async function getAiResponse(prompt, connectionId) {
     const appId = '2576d4762e6f4d85ba2cdec3343b9ec7' 
     const apiKey = 'sk-e82ebe05118e482e9e2069baf1589acc'
 
     const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
-
     const data = {
         input: {
             prompt: prompt,
-            memory_id: memoryId
+            session_id: connectionId
         },
         parameters: {},
         debug: {}
@@ -80,11 +78,6 @@ function logChat(userMessage, aiResponse, logFile) {
         console.error('写入日志失败:', error);
     }
 }
-
-const openai = new OpenAI({
-    apiKey: 'sk-e82ebe05118e482e9e2069baf1589acc',
-    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
-});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -626,7 +619,7 @@ wss.on('connection', (ws) => {
                 
                 const { history, logFile } = connectionInfo;
                 
-                const aiReply = await getAiResponse(userMessage, connectionInfo.id);
+                const aiReply = await getAiResponse(userMessage, connectionId);
                 console.log('AI回复:', aiReply);
                 
                 // 记录聊天到连接专用日志
