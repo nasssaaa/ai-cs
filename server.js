@@ -14,37 +14,42 @@ if (!fs.existsSync(logsDir)) {
 }
 
 //ai应用调用函数
-async function getAiResponse(prompt, connectionId) {
-    const appId = '2576d4762e6f4d85ba2cdec3343b9ec7' 
-    const apiKey = 'sk-e82ebe05118e482e9e2069baf1589acc'
+async function getAiResponse(prompt, history) {
+    const appId = 'kb-service-6938b6ec8ace1f3d' 
+    const apiKey = 'afe01879-d881-45f6-bbb4-fc8a34390aa5'
 
-    const url = `https://dashscope.aliyuncs.com/api/v1/apps/${appId}/completion`;
+    const url = `http://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
     const data = {
-        input: {
-            prompt: prompt,
-            session_id: connectionId
-        },
-        parameters: {},
-        debug: {}
+        service_resource_id: appId,
+        messages: [
+            ...history,
+            {
+                role: "user",
+                content: prompt
+            }
+        ],
+        stream: false
     };
 
     try {
         const response = await axios.post(url, data, {
             headers: {
+                'Accept': "application/json",
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                "Host": "api-knowledgebase.mlp.cn-beijing.volces.com"
             }
         });
 
         if (response.status === 200) {
-            return response.data.output.text;
+            return response.data.data.generated_answer;
         } else {
             console.log(`request_id=${response.headers['request_id']}`);
             console.log(`code=${response.status}`);
             console.log(`message=${response.data.message}`);
         }
     } catch (error) {
-        console.error(`Error calling DashScope: ${error.message}`);
+        console.error(`Error calling KnowledgeBase: ${error.message}`);
         if (error.response) {
             console.error(`Response status: ${error.response.status}`);
             console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
@@ -589,7 +594,8 @@ wss.on('connection', (ws) => {
     connectionConversations.set(ws, {
         id: connectionId,
         logFile: logFileName,
-        history: []
+        history: [],
+        historyFormat: []
     });
     
     console.log(`连接 ${connectionId} 已建立，日志文件: ${logFileName}`);
@@ -617,9 +623,9 @@ wss.on('connection', (ws) => {
                     return;
                 }
                 
-                const { history, logFile } = connectionInfo;
+                const { history, historyFormat, logFile } = connectionInfo;
                 
-                const aiReply = await getAiResponse(userMessage, connectionId);
+                const aiReply = await getAiResponse(userMessage, historyFormat);
                 console.log('AI回复:', aiReply);
                 
                 // 记录聊天到连接专用日志
@@ -632,6 +638,14 @@ wss.on('connection', (ws) => {
                     ai: aiReply
                 };
                 history.push(newEntry);
+                historyFormat.push({
+                    role: "user",
+                    content: userMessage
+                });
+                historyFormat.push({
+                    role: "assistant",
+                    content: aiReply
+                });
                 console.log(`连接 ${connectionInfo.id} 对话历史已更新，当前共有 ${history.length} 条记录`);
                 
                 // 发送回复给客户端
