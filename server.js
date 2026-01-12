@@ -15,7 +15,7 @@ if (!fs.existsSync(logsDir)) {
 
 //ai应用调用函数
 async function getAiResponse(prompt, history) {
-    const appId = 'kb-service-6938b6ec8ace1f3d' 
+    const appId = 'kb-service-2b9eff4b91435433' 
     const apiKey = 'afe01879-d881-45f6-bbb4-fc8a34390aa5'
 
     const url = `http://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
