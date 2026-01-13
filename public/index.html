@@ -77,6 +77,14 @@
             line-height: 1.4;
         }
         
+        .message-image {
+            max-width: 200px;
+            height: auto;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: block;
+        }
+        
         .user-message {
             align-self: flex-end;
             background-color: #4CAF50;
@@ -322,7 +330,9 @@
         function displayMessage(text, type) {
             const messageDiv = document.createElement('div');
             messageDiv.className = type === 'user' ? 'message user-message' : 'message ai-message';
-            messageDiv.textContent = text;
+            
+            // 直接使用后端处理后的内容（已包含解析好的图片标签）
+            messageDiv.innerHTML = text;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }

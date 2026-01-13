@@ -5,7 +5,7 @@ const fs = require('fs');
 const WebSocket = require('ws');
 const http = require('http');
 const axios = require('axios');
-
+const { Signer } = require('@volcengine/openapi');
 // 确保logs目录存在
 const logsDir = path.join(__dirname, 'logs');
 if (!fs.existsSync(logsDir)) {
@@ -13,12 +13,52 @@ if (!fs.existsSync(logsDir)) {
     console.log('创建logs目录成功');
 }
 
+async function getSliceUrl(sliceId) {
+    const url = `https://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/point/info`;
+    const credentials = {
+        accessKeyId: 'AKLTZGE1YmU5OGI1OTM2NDgzOTk5ZjgyOTU3Y2UyNzAyMDc',
+        secretKey: 'TXpVeFl6STVPR1V4TjJSbU5HRTBaV0UxTmpabU16Um1aRGswTmprd056UQ=='
+    }
+    const body = {
+        point_id: sliceId,
+        resource_id: 'kb-a0cb294cc7d1cbf8',
+        get_attachment_link: true
+    }
+    const request = {
+        region: 'cn-beijing',
+        headers: {
+            'Accept': "application/json",
+            'Content-type': 'application/json',
+            'Host': 'api-knowledgebase.mlp.cn-beijing.volces.com'
+        },
+        method: 'POST',
+        body: JSON.stringify(body),
+        pathname: '/api/knowledge/point/info'
+    };
+    const signer = new Signer(request, 'air');
+    signer.addAuthorization(credentials);
+
+    try {
+        const response = await axios.post(url, body, {
+            headers: request.headers
+        });
+        return response.data.data.chunk_attachment[0].link
+    }catch (error) {
+        console.error(`Error calling KnowledgeBase: ${error.message}`);
+        if (error.response) {
+            console.error(`Response status: ${error.response.status}`);
+            console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+        }
+    }
+    return null;
+}
+
 //ai应用调用函数
 async function getAiResponse(prompt, history) {
     const appId = 'kb-service-2b9eff4b91435433' 
     const apiKey = 'afe01879-d881-45f6-bbb4-fc8a34390aa5'
 
-    const url = `http://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
+    const url = `https://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
     const data = {
         service_resource_id: appId,
         messages: [
@@ -648,8 +688,26 @@ wss.on('connection', (ws) => {
                 });
                 console.log(`连接 ${connectionInfo.id} 对话历史已更新，当前共有 ${history.length} 条记录`);
                 
-                // 发送回复给客户端
-                ws.send(JSON.stringify({ type: 'chat', content: aiReply }));
+                // 解析火山引擎vikingdb知识库返回的插图标记
+                function parseIllustrationTags(text) {
+                    // 查找并替换插图标记 <illustration data-ref="..."></illustration>
+                    const illustrationRegex = /<illustration[^>]*data-ref\s*=\s*["']([^"']+)["'][^>]*><\/illustration>/gi;
+                    let processedText = text;
+                    
+                    processedText = processedText.replace(illustrationRegex, (match, sliceId) => {
+                        // 检查data-ref是否是完整的URL 
+                        const result = `<img src="/api/download-image/${sliceId}" alt="${sliceId}" class="message-image">`
+                        return result;
+                    });
+                    
+                    return processedText;
+                }
+                
+                // 解析AI回复中的插图标记
+                const processedReply = parseIllustrationTags(aiReply);
+                
+                // 发送处理后的回复给客户端
+                ws.send(JSON.stringify({ type: 'chat', content: processedReply }));
             }
         } catch (error) {
                 console.error('WebSocket处理错误:', error);
@@ -708,6 +766,38 @@ wss.on('connection', (ws) => {
     ws.on('error', (error) => {
         console.error('WebSocket错误:', error);
     });
+});
+
+// 图片下载路由
+app.get('/api/download-image/:sliceid', async (req, res) => {
+    try {
+        // 获取sliceid路径参数
+        const sliceid = req.params.sliceid;
+        
+        // 使用getSliceUrl函数获取图片URL
+        const imageUrl = await getSliceUrl(sliceid);
+
+        console.log
+        
+        if (!imageUrl) {
+            return res.status(404).json({ error: '图片不存在或获取URL失败' });
+        }
+        
+        // 使用axios下载图片
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer'
+        });
+        
+        // 设置响应头
+        res.setHeader('Content-Type', response.headers['content-type']);
+        res.setHeader('Content-Length', response.headers['content-length']);
+        
+        // 返回图片数据
+        res.send(response.data);
+    } catch (error) {
+        console.error('下载图片失败:', error);
+        res.status(500).json({ error: '下载图片失败', message: error.message });
+    }
 });
 
 // 启动服务器
