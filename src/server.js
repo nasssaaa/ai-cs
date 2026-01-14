@@ -6,8 +6,9 @@ const WebSocket = require('ws');
 const http = require('http');
 const axios = require('axios');
 const { Signer } = require('@volcengine/openapi');
+const appRoot = require('app-root-path');
 // 确保logs目录存在
-const logsDir = path.join(__dirname, 'logs');
+const logsDir = path.join(appRoot.path, 'logs');
 if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
     console.log('创建logs目录成功');
@@ -53,6 +54,41 @@ async function getSliceUrl(sliceId) {
     return null;
 }
 
+async function updateTokensUsage(date, tokens) {
+    try {
+        // 验证数据格式
+        if (!date || typeof tokens !== 'number') {
+            return res.status(400).json({ error: '无效的数据格式' });
+        }
+
+        console.log(`date=${date}, tokens=${tokens}`)
+        
+        // 读取现有数据
+        const usageData = readTokensUsageData();
+        
+        // 查找是否已有该日期的数据
+        const index = usageData.findIndex(item => item[0] === date);
+        
+        if (index !== -1) {
+            // 更新现有数据
+            usageData[index][1] += parseFloat(tokens/1000);
+        } else {
+            // 添加新数据
+            usageData.push([date, parseFloat(tokens/1000)]);
+        }
+        
+        // 保存更新后的数据
+        const success = saveTokensUsageData(usageData);
+        
+        if(!success) {
+            res.status(500).json({ error: '数据保存失败' });
+        }
+    } catch (error) {
+        console.error('保存tokens使用量数据失败:', error);
+        res.status(500).json({ error: '服务器错误', message: error.message });
+    }
+}
+
 //ai应用调用函数
 async function getAiResponse(prompt, history) {
     const appId = 'kb-service-2b9eff4b91435433' 
@@ -82,7 +118,10 @@ async function getAiResponse(prompt, history) {
         });
 
         if (response.status === 200) {
-            return response.data.data.generated_answer;
+            const data = response.data
+            const tokens = data.data.token_usage.llm_token_usage.total_tokens
+            updateTokensUsage(new Date().toISOString().split('T')[0], tokens)
+            return data.data.generated_answer;
         } else {
             console.log(`request_id=${response.headers['request_id']}`);
             console.log(`code=${response.status}`);
@@ -113,11 +152,6 @@ function logChat(userMessage, aiResponse, logFile) {
         if (logFile) {
             fs.appendFileSync(logFile, logLine, 'utf8');
             console.log('聊天记录已写入连接日志文件:', logFile);
-        } else {
-            const dateStr = timestamp.toISOString().split('T')[0]; // YYYY-MM-DD
-            const defaultLogFile = path.join(logsDir, `${dateStr}.log`);
-            fs.appendFileSync(defaultLogFile, logLine, 'utf8');
-            console.log('聊天记录已写入默认日志文件:', defaultLogFile);
         }
     } catch (error) {
         console.error('写入日志失败:', error);
@@ -129,15 +163,16 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(appRoot.path, 'public')));
 
 // 获取日志文件列表（返回HTML页面）
-app.get('/api/logs', (req, res) => {
+app.get('/api/admin/logs', (req, res) => {
     try {
         // 获取日期筛选参数
         const filterDate = req.query.date;
         
-        let logFiles = fs.readdirSync(logsDir)
+        // 读取日志目录下所有日志文件
+        let logFiles = fs.readdirSync(path.join(appRoot.path, 'logs'))
             .filter(file => file.endsWith('.log'));
             
         // 如果有日期筛选，过滤日志文件
@@ -173,235 +208,32 @@ app.get('/api/logs', (req, res) => {
             return file.split('-').slice(0, 3).join('-');
         }))].sort((a, b) => new Date(b) - new Date(a));
         
-        // 生成HTML页面
-        const html = `
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日志文件列表</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #4CAF50;
-        }
-        
-        .filter-container {
-            background-color: #2d2d2d;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #444;
-        }
-        
-        .filter-form {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-form label {
-            font-weight: bold;
-            color: #ccc;
-        }
-        
-        .filter-form input[type="date"] {
-            padding: 8px 12px;
-            background-color: #3a3a3a;
-            border: 1px solid #555;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-        }
-        
-        .filter-form input[type="submit"],
-        .filter-form a {
-            padding: 8px 20px;
-            background-color: #2196F3;
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        
-        .filter-form input[type="submit"]:hover,
-        .filter-form a:hover {
-            background-color: #0b7dda;
-        }
-        
-        .log-list {
-            background-color: #2d2d2d;
-            border-radius: 10px;
-            max-height: 500px;
-            overflow-y: auto;
-            border: 1px solid #444;
-        }
-        
-        .log-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #444;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .log-item:last-child {
-            border-bottom: none;
-        }
-        
-        .log-item:hover {
-            background-color: #3a3a3a;
-        }
-        
-        .log-item:active {
-            background-color: #444;
-        }
-        
-        .log-date {
-            font-weight: bold;
-            font-size: 16px;
-        }
-        
-        .log-time {
-            color: #4CAF50;
-            font-size: 14px;
-            margin: 5px 0;
-        }
-        
-        .log-info {
-            color: #aaa;
-            font-size: 14px;
-        }
-        
-        .no-logs {
-            padding: 30px;
-            text-align: center;
-            color: #777;
-        }
-        
-        .back-button {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        
-        .back-button:hover {
-            background-color: #45a049;
-        }
-        
-        .view-button {
-            padding: 5px 15px;
-            background-color: #2196F3;
-            color: white;
-            text-decoration: none;
-            border-radius: 15px;
-            font-size: 12px;
-            transition: background-color 0.3s ease;
-        }
-        
-        .view-button:hover {
-            background-color: #0b7dda;
-        }
-        
-        /* 滚动条样式 */
-        .log-list::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .log-list::-webkit-scrollbar-track {
-            background: #333;
-            border-radius: 4px;
-        }
-        
-        .log-list::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
-        }
-        
-        .log-list::-webkit-scrollbar-thumb:hover {
-            background: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <a href="/" class="back-button">← 返回聊天界面</a>
-        <h1>📋 日志文件列表</h1>
-        
-        <div class="filter-container">
-            <form class="filter-form" method="get">
-                <label for="date">选择日期:</label>
-                <input type="date" id="date" name="date" value="${filterDate || ''}">
-                <input type="submit" value="筛选">
-                <a href="/api/logs">清除筛选</a>
-            </form>
-        </div>
-        
-        <div class="log-list">
-            ${logFiles.length > 0 ? logFiles.map(file => {
-                // 解析文件名，提取日期、时间和连接ID
-                const parts = file.split('.')[0].split('-');
-                const dateStr = parts.slice(0, 3).join('-');
-                const timeStr = parts.slice(3, 6).join(':');
-                const connectionId = parts.slice(6).join('-') || 'default';
-                
-                return `
-                    <div class="log-item">
-                        <div>
-                            <div class="log-date">${dateStr}</div>
-                            <div class="log-time">${timeStr}</div>
-                            <div class="log-info">连接ID: ${connectionId}</div>
-                        </div>
-                        <a href="/api/logs/${file}" class="view-button">查看</a>
+        // 生成日志项HTML
+        const logItems = logFiles.length > 0 ? logFiles.map(file => {
+            // 解析文件名，提取日期、时间和连接ID
+            const parts = file.split('.')[0].split('-');
+            const dateStr = parts.slice(0, 3).join('-');
+            const timeStr = parts.slice(3, 6).join(':');
+            const connectionId = parts.slice(6).join('-') || 'default';
+            
+            return `
+                <div class="log-item">
+                    <div>
+                        <div class="log-date">${dateStr}</div>
+                        <div class="log-time">${timeStr}</div>
+                        <div class="log-info">连接ID: ${connectionId}</div>
                     </div>
-                `;
-            }).join('') : '<div class="no-logs">暂无日志文件</div>'}
-        </div>
-    </div>
-    
-    <script>
-        // 为日志项添加点击事件
-        document.querySelectorAll('.log-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const viewButton = item.querySelector('.view-button');
-                if (viewButton) {
-                    window.location.href = viewButton.href;
-                }
-            });
-        });
+                    <a href="/api/admin/logs/${file}" class="view-button">查看</a>
+                </div>
+            `;
+        }).join('') : '<div class="no-logs">暂无日志文件</div>';
         
-        // 设置日期选择器的最大日期为今天
-        document.getElementById('date').max = new Date().toISOString().split('T')[0];
-    </script>
-</body>
-</html>
-        `;
+        // 读取HTML模板文件
+        const htmlTemplate = fs.readFileSync(path.join(appRoot.path, 'html/logs-list.html'), 'utf8');
+        
+        // 替换模板变量
+        let html = htmlTemplate.replace('{{filterDate}}', filterDate || '');
+        html = html.replace('{{logItems}}', logItems);
         
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
@@ -417,17 +249,17 @@ app.get('/api/logs', (req, res) => {
 });
 
 // 查看特定日志文件内容（返回HTML页面）
-app.get('/api/logs/:filename', (req, res) => {
+app.get('/api/admin/logs/:filename', (req, res) => {
     try {
         const filename = req.params.filename;
-        const logPath = path.join(logsDir, filename);
+        const logPath = path.join(appRoot.path, 'logs', filename);
         
         // 验证文件名格式和路径安全性
         if (!filename.endsWith('.log') || !fs.existsSync(logPath) || !path.dirname(logPath).endsWith('logs')) {
             return res.status(404).send(`
                 <html>
                     <head><title>错误</title><style>body{background:#1a1a1a;color:#f44336;font-family:Arial,sans-serif;padding:20px;}</style></head>
-                    <body><h1>错误</h1><p>日志文件不存在</p><a href="/api/logs" style="color:#4CAF50;">返回日志列表</a></body>
+                    <body><h1>错误</h1><p>日志文件不存在</p><a href="/api/admin/logs" style="color:#4CAF50;">返回日志列表</a></body>
                 </html>
             `);
         }
@@ -437,149 +269,27 @@ app.get('/api/logs/:filename', (req, res) => {
             .map(line => JSON.parse(line))
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // 按时间戳倒序排序，最新的在最上面
         
-        // 生成HTML页面
-        const html = `
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日志查看 - ${filename}</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        
-        h1 {
-            color: #4CAF50;
-        }
-        
-        .back-button {
-            padding: 10px 20px;
-            background-color: #2196F3;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        
-        .back-button:hover {
-            background-color: #0b7dda;
-        }
-        
-        .log-container {
-            background-color: #2d2d2d;
-            border-radius: 10px;
-            max-height: 600px;
-            overflow-y: auto;
-            border: 1px solid #444;
-        }
-        
-        .log-entry {
-            padding: 20px;
-            border-bottom: 1px solid #444;
-        }
-        
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-        
-        .log-timestamp {
-            color: #888;
-            font-size: 12px;
-            margin-bottom: 10px;
-        }
-        
-        .log-user,
-        .log-ai {
-            margin: 10px 0;
-            padding: 10px 15px;
-            border-radius: 8px;
-        }
-        
-        .log-user {
-            background-color: #3a3a3a;
-            border-left: 4px solid #2196F3;
-        }
-        
-        .log-ai {
-            background-color: #3a3a3a;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .log-label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .no-entries {
-            padding: 30px;
-            text-align: center;
-            color: #777;
-        }
-        
-        /* 滚动条样式 */
-        .log-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .log-container::-webkit-scrollbar-track {
-            background: #333;
-            border-radius: 4px;
-        }
-        
-        .log-container::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
-        }
-        
-        .log-container::-webkit-scrollbar-thumb:hover {
-            background: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📝 日志查看 - ${filename}</h1>
-            <a href="/api/logs" class="back-button">← 返回日志列表</a>
-        </div>
-        
-        <div class="log-container">
-            ${logEntries.length > 0 ? logEntries.map((entry, index) => `
-                <div class="log-entry">
-                    <div class="log-timestamp">${new Date(entry.timestamp).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                    <div class="log-user">
-                        <div class="log-label">用户:</div>
-                        <div>${entry.user}</div>
-                    </div>
-                    <div class="log-ai">
-                        <div class="log-label">AI:</div>
-                        <div>${entry.ai}</div>
-                    </div>
+        // 生成日志条目HTML
+        const logEntriesHtml = logEntries.length > 0 ? logEntries.map((entry, index) => `
+            <div class="log-entry">
+                <div class="log-timestamp">${new Date(entry.timestamp).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                <div class="log-user">
+                    <div class="log-label">用户:</div>
+                    <div>${entry.user}</div>
                 </div>
-            `).join('') : '<div class="no-entries">日志文件为空</div>'}
-        </div>
-    </div>
-</body>
-</html>
-        `;
+                <div class="log-ai">
+                    <div class="log-label">AI:</div>
+                    <div>${entry.ai}</div>
+                </div>
+            </div>
+        `).join('') : '<div class="no-entries">日志文件为空</div>';
+        
+        // 读取HTML模板文件
+        const htmlTemplate = fs.readFileSync(path.join(appRoot.path, 'html/log-view.html'), 'utf8');
+        
+        // 替换模板变量 - 使用全局替换以替换所有匹配项
+        let html = htmlTemplate.replace(/{{filename}}/g, filename);
+        html = html.replace('{{logEntries}}', logEntriesHtml);
         
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
@@ -588,7 +298,7 @@ app.get('/api/logs/:filename', (req, res) => {
         res.status(500).send(`
             <html>
                 <head><title>错误</title><style>body{background:#1a1a1a;color:#f44336;font-family:Arial,sans-serif;padding:20px;}</style></head>
-                <body><h1>错误</h1><p>读取日志文件失败: ${error.message}</p><a href="/api/logs" style="color:#4CAF50;">返回日志列表</a></body>
+                <body><h1>错误</h1><p>读取日志文件失败: ${error.message}</p><a href="/api/admin/logs" style="color:#4CAF50;">返回日志列表</a></body>
             </html>
         `);
     }
@@ -628,7 +338,7 @@ wss.on('connection', (ws) => {
     const dateStr = `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
     
     // 创建连接专用的日志文件路径
-    const logFileName = path.join(logsDir, `${dateStr}-${connectionId}.log`);
+    const logFileName = path.join(appRoot.path, 'logs', `${dateStr}-${connectionId}.log`);
     
     // 为新连接初始化对话历史和日志信息
     connectionConversations.set(ws, {
@@ -756,7 +466,8 @@ wss.on('connection', (ws) => {
     // 处理连接关闭
     ws.on('close', () => {
         console.log('WebSocket连接关闭');
-        
+        const {logFile} = connectionConversations.get(ws);
+        fs.unlinkSync(logFile);
         // 清理该连接的对话历史
         connectionConversations.delete(ws);
         console.log('连接对话历史已清理');
@@ -777,8 +488,6 @@ app.get('/api/download-image/:sliceid', async (req, res) => {
         // 使用getSliceUrl函数获取图片URL
         const imageUrl = await getSliceUrl(sliceid);
 
-        console.log
-        
         if (!imageUrl) {
             return res.status(404).json({ error: '图片不存在或获取URL失败' });
         }
@@ -797,6 +506,66 @@ app.get('/api/download-image/:sliceid', async (req, res) => {
     } catch (error) {
         console.error('下载图片失败:', error);
         res.status(500).json({ error: '下载图片失败', message: error.message });
+    }
+});
+
+// 读取tokens使用量数据
+const readTokensUsageData = () => {
+    try {
+        const data = fs.readFileSync(path.join(appRoot.path, 'data/tokens-usage.json'), 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('读取tokens使用量数据失败:', error);
+        return [];
+    }
+};
+
+// 保存tokens使用量数据
+const saveTokensUsageData = (data) => {
+    try {
+        fs.writeFileSync(path.join(appRoot.path, 'data/tokens-usage.json'), JSON.stringify(data, null, 2), 'utf8');
+        return true;
+    } catch (error) {
+        console.error('保存tokens使用量数据失败:', error);
+        return false;
+    }
+};
+
+// 确保tokens使用量数据文件存在
+if (!fs.existsSync(path.join(appRoot.path, 'data/tokens-usage.json'))) {
+    saveTokensUsageData([]);
+    console.log('创建tokens-usage.json文件成功');
+}
+
+app.get('/api/tokens-usage', (req, res) => {
+    res.send(JSON.stringify(readTokensUsageData()));
+})
+
+// tokens使用量监控路由
+app.get('/api/admin/tokens-usage-monitor', (req, res) => {
+    try {
+        // 读取HTML文件
+        const html = fs.readFileSync(path.join(appRoot.path, 'html/tokens-usage-monitor.html'), 'utf8');
+        
+        res.setHeader('Content-Type', 'text/html');
+        res.send(html);
+    } catch (error) {
+
+        console.error('生成监控页面失败:', error);
+        res.status(500).json({ error: '生成监控页面失败', message: error.message });
+    }
+});
+
+app.get('/api/admin', (req, res) => {
+    try {
+        // 读取HTML文件
+        const html = fs.readFileSync(path.join(appRoot.path, 'html/admin.html'), 'utf8');
+        
+        res.setHeader('Content-Type', 'text/html');
+        res.send(html);
+    } catch (error) {
+        console.error('生成管理员页面失败:', error);
+        res.status(500).json({ error: '生成管理员页面失败', message: error.message });
     }
 });
 

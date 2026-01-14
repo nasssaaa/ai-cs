@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志文件列表</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4CAF50;
+        }
+        
+        .filter-container {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        
+        .filter-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-form label {
+            font-weight: bold;
+            color: #ccc;
+        }
+        
+        .filter-form input[type="date"] {
+            padding: 8px 12px;
+            background-color: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .filter-form input[type="submit"],
+        .filter-form a {
+            padding: 8px 20px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .filter-form input[type="submit"]:hover,
+        .filter-form a:hover {
+            background-color: #0b7dda;
+        }
+        
+        .log-list {
+            background-color: #2d2d2d;
+            border-radius: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        
+        .log-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .log-item:last-child {
+            border-bottom: none;
+        }
+        
+        .log-item:hover {
+            background-color: #3a3a3a;
+        }
+        
+        .log-item:active {
+            background-color: #444;
+        }
+        
+        .log-date {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .log-time {
+            color: #4CAF50;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .log-info {
+            color: #aaa;
+            font-size: 14px;
+        }
+        
+        .no-logs {
+            padding: 30px;
+            text-align: center;
+            color: #777;
+        }
+        
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background-color: #45a049;
+        }
+        
+        .view-button {
+            padding: 5px 15px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 15px;
+            font-size: 12px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .view-button:hover {
+            background-color: #0b7dda;
+        }
+        
+        /* 滚动条样式 */
+        .log-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log-list::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .log-list::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        
+        .log-list::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/api/admin" class="back-button">← 返回后台导航</a>
+        <h1>📋 日志文件列表</h1>
+        
+        <div class="filter-container">
+            <form class="filter-form" method="get">
+                <label for="date">选择日期:</label>
+                <input type="date" id="date" name="date" value="{{filterDate}}">
+                <input type="submit" value="筛选">
+                <a href="/api/admin/logs">清除筛选</a>
+            </form>
+        </div>
+        
+        <div class="log-list">
+            {{logItems}}
+        </div>
+    </div>
+    
+    <script>
+        // 为日志项添加点击事件
+        document.querySelectorAll('.log-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const viewButton = item.querySelector('.view-button');
+                if (viewButton) {
+                    window.location.href = viewButton.href;
+                }
+            });
+        });
+        
+        // 设置日期选择器的最大日期为今天
+        document.getElementById('date').max = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>
