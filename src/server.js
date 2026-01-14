@@ -466,8 +466,6 @@ wss.on('connection', (ws) => {
     // 处理连接关闭
     ws.on('close', () => {
         console.log('WebSocket连接关闭');
-        const {logFile} = connectionConversations.get(ws);
-        fs.unlinkSync(logFile);
         // 清理该连接的对话历史
         connectionConversations.delete(ws);
         console.log('连接对话历史已清理');
