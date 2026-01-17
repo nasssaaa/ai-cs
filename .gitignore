@@ -1,5 +1,3 @@
 *.log
 *.json
 *.bak
-!data/
-!data/*.json
