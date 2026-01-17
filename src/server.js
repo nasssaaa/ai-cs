@@ -44,7 +44,7 @@ async function getSliceUrl(sliceId) {
             headers: request.headers
         });
         return response.data.data.chunk_attachment[0].link
-    }catch (error) {
+    } catch (error) {
         console.error(`Error calling KnowledgeBase: ${error.message}`);
         if (error.response) {
             console.error(`Response status: ${error.response.status}`);
@@ -62,25 +62,25 @@ async function updateTokensUsage(date, tokens) {
         }
 
         console.log(`date=${date}, tokens=${tokens}`)
-        
+
         // 读取现有数据
         const usageData = readTokensUsageData();
-        
+
         // 查找是否已有该日期的数据
         const index = usageData.findIndex(item => item[0] === date);
-        
+
         if (index !== -1) {
             // 更新现有数据
-            usageData[index][1] += parseFloat(tokens/1000);
+            usageData[index][1] += parseFloat(tokens / 1000);
         } else {
             // 添加新数据
-            usageData.push([date, parseFloat(tokens/1000)]);
+            usageData.push([date, parseFloat(tokens / 1000)]);
         }
-        
+
         // 保存更新后的数据
         const success = saveTokensUsageData(usageData);
-        
-        if(!success) {
+
+        if (!success) {
             res.status(500).json({ error: '数据保存失败' });
         }
     } catch (error) {
@@ -91,7 +91,7 @@ async function updateTokensUsage(date, tokens) {
 
 //ai应用调用函数
 async function getAiResponse(prompt, history) {
-    const appId = 'kb-service-2b9eff4b91435433' 
+    const appId = 'kb-service-2b9eff4b91435433'
     const apiKey = 'afe01879-d881-45f6-bbb4-fc8a34390aa5'
 
     const url = `https://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
@@ -145,9 +145,9 @@ function logChat(userMessage, aiResponse, logFile) {
         user: userMessage,
         ai: aiResponse
     };
-    
+
     const logLine = JSON.stringify(logEntry) + '\n';
-    
+
     try {
         if (logFile) {
             fs.appendFileSync(logFile, logLine, 'utf8');
@@ -170,11 +170,11 @@ app.get('/api/admin/logs', (req, res) => {
     try {
         // 获取日期筛选参数
         const filterDate = req.query.date;
-        
+
         // 读取日志目录下所有日志文件
         let logFiles = fs.readdirSync(path.join(appRoot.path, 'logs'))
             .filter(file => file.endsWith('.log'));
-            
+
         // 如果有日期筛选，过滤日志文件
         if (filterDate) {
             logFiles = logFiles.filter(file => {
@@ -182,32 +182,32 @@ app.get('/api/admin/logs', (req, res) => {
                 return fileDate === filterDate;
             });
         }
-            
+
         // 按日期和时间倒序排序，最新的在最上面
         logFiles.sort((a, b) => {
             // 解析完整的日期时间字符串（前6部分：YYYY-MM-DD-HH-mm-ss）
             const datetimeA = a.split('-').slice(0, 6).join('-');
             const datetimeB = b.split('-').slice(0, 6).join('-');
-            
+
             // 按完整日期时间倒序排序
             const dateTimeA = new Date(datetimeA.replace(/-(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3'));
             const dateTimeB = new Date(datetimeB.replace(/-(\d{2})-(\d{2})-(\d{2})$/, 'T$1:$2:$3'));
-            
+
             if (dateTimeB.getTime() !== dateTimeA.getTime()) {
                 return dateTimeB - dateTimeA;
             }
-            
+
             // 如果日期时间相同，按连接ID倒序排序
             const idA = a.split('-').slice(6).join('-');
             const idB = b.split('-').slice(6).join('-');
             return idB.localeCompare(idA);
         });
-        
+
         // 获取所有唯一的日期，用于日期选择器
         const allDates = [...new Set(logFiles.map(file => {
             return file.split('-').slice(0, 3).join('-');
         }))].sort((a, b) => new Date(b) - new Date(a));
-        
+
         // 生成日志项HTML
         const logItems = logFiles.length > 0 ? logFiles.map(file => {
             // 解析文件名，提取日期、时间和连接ID
@@ -215,26 +215,26 @@ app.get('/api/admin/logs', (req, res) => {
             const dateStr = parts.slice(0, 3).join('-');
             const timeStr = parts.slice(3, 6).join(':');
             const connectionId = parts.slice(6).join('-') || 'default';
-            
+
             return `
-                <div class="log-item">
+                <div class="log-item" data-href="/api/admin/logs/${file}">
                     <div>
                         <div class="log-date">${dateStr}</div>
                         <div class="log-time">${timeStr}</div>
                         <div class="log-info">连接ID: ${connectionId}</div>
                     </div>
-                    <a href="/api/admin/logs/${file}" class="view-button">查看</a>
+                    <span class="nav-arrow">➜</span>
                 </div>
             `;
         }).join('') : '<div class="no-logs">暂无日志文件</div>';
-        
+
         // 读取HTML模板文件
         const htmlTemplate = fs.readFileSync(path.join(appRoot.path, 'html/logs-list.html'), 'utf8');
-        
+
         // 替换模板变量
         let html = htmlTemplate.replace('{{filterDate}}', filterDate || '');
         html = html.replace('{{logItems}}', logItems);
-        
+
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     } catch (error) {
@@ -253,7 +253,7 @@ app.get('/api/admin/logs/:filename', (req, res) => {
     try {
         const filename = req.params.filename;
         const logPath = path.join(appRoot.path, 'logs', filename);
-        
+
         // 验证文件名格式和路径安全性
         if (!filename.endsWith('.log') || !fs.existsSync(logPath) || !path.dirname(logPath).endsWith('logs')) {
             return res.status(404).send(`
@@ -263,12 +263,12 @@ app.get('/api/admin/logs/:filename', (req, res) => {
                 </html>
             `);
         }
-        
+
         const logContent = fs.readFileSync(logPath, 'utf8');
         const logEntries = logContent.trim().split('\n')
             .map(line => JSON.parse(line))
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); // 按时间戳倒序排序，最新的在最上面
-        
+
         // 生成日志条目HTML
         const logEntriesHtml = logEntries.length > 0 ? logEntries.map((entry, index) => `
             <div class="log-entry">
@@ -283,14 +283,14 @@ app.get('/api/admin/logs/:filename', (req, res) => {
                 </div>
             </div>
         `).join('') : '<div class="no-entries">日志文件为空</div>';
-        
+
         // 读取HTML模板文件
         const htmlTemplate = fs.readFileSync(path.join(appRoot.path, 'html/log-view.html'), 'utf8');
-        
+
         // 替换模板变量 - 使用全局替换以替换所有匹配项
         let html = htmlTemplate.replace(/{{filename}}/g, filename);
         html = html.replace('{{logEntries}}', logEntriesHtml);
-        
+
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     } catch (error) {
@@ -323,11 +323,11 @@ function generateConnectionId() {
 // 处理WebSocket连接
 wss.on('connection', (ws) => {
     console.log('新的WebSocket连接');
-    
+
     // 为新连接生成唯一ID
     const connectionId = generateConnectionId();
     const timestamp = new Date();
-    
+
     // 构建包含年月日时分秒的字符串：YYYY-MM-DD-HH-mm-ss
     const year = timestamp.getFullYear();
     const month = String(timestamp.getMonth() + 1).padStart(2, '0');
@@ -336,10 +336,10 @@ wss.on('connection', (ws) => {
     const minutes = String(timestamp.getMinutes()).padStart(2, '0');
     const seconds = String(timestamp.getSeconds()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
-    
+
     // 创建连接专用的日志文件路径
     const logFileName = path.join(appRoot.path, 'logs', `${dateStr}-${connectionId}.log`);
-    
+
     // 为新连接初始化对话历史和日志信息
     connectionConversations.set(ws, {
         id: connectionId,
@@ -347,40 +347,40 @@ wss.on('connection', (ws) => {
         history: [],
         historyFormat: []
     });
-    
+
     console.log(`连接 ${connectionId} 已建立，日志文件: ${logFileName}`);
-    
+
     // 处理接收到的消息
     ws.on('message', async (message) => {
         try {
             const data = JSON.parse(message);
             const { type, content } = data;
-            
+
             if (type === 'chat') {
                 const userMessage = content;
                 console.log('用户消息:', userMessage);
-                
+
                 if (!userMessage) {
                     ws.send(JSON.stringify({ type: 'error', content: '消息不能为空' }));
                     return;
                 }
-                
+
                 // 获取当前连接的对话信息
                 const connectionInfo = connectionConversations.get(ws);
 
-                if(!connectionInfo) {
+                if (!connectionInfo) {
                     ws.send(JSON.stringify({ type: 'error', content: '对话历史不存在' }));
                     return;
                 }
-                
+
                 const { history, historyFormat, logFile } = connectionInfo;
-                
+
                 const aiReply = await getAiResponse(userMessage, historyFormat);
                 console.log('AI回复:', aiReply);
-                
+
                 // 记录聊天到连接专用日志
                 logChat(userMessage, aiReply, logFile);
-                
+
                 // 更新对话历史
                 const newEntry = {
                     timestamp: new Date().toISOString(),
@@ -397,72 +397,72 @@ wss.on('connection', (ws) => {
                     content: aiReply
                 });
                 console.log(`连接 ${connectionInfo.id} 对话历史已更新，当前共有 ${history.length} 条记录`);
-                
+
                 // 解析火山引擎vikingdb知识库返回的插图标记
                 function parseIllustrationTags(text) {
                     // 查找并替换插图标记 <illustration data-ref="..."></illustration>
                     const illustrationRegex = /<illustration[^>]*data-ref\s*=\s*["']([^"']+)["'][^>]*><\/illustration>/gi;
                     let processedText = text;
-                    
+
                     processedText = processedText.replace(illustrationRegex, (match, sliceId) => {
                         // 检查data-ref是否是完整的URL 
                         const result = `<img src="/api/download-image/${sliceId}" alt="${sliceId}" class="message-image">`
                         return result;
                     });
-                    
+
                     return processedText;
                 }
-                
+
                 // 解析AI回复中的插图标记
                 const processedReply = parseIllustrationTags(aiReply);
-                
+
                 // 发送处理后的回复给客户端
                 ws.send(JSON.stringify({ type: 'chat', content: processedReply }));
             }
         } catch (error) {
-                console.error('WebSocket处理错误:', error);
-                
-                // 根据错误类型返回不同的错误信息
-                let errorMessage = '服务暂时不可用，请稍后重试';
-            
-                // 处理429错误
-                if (error.status === 429) {
-                    if (error.code === 'limit_requests') {
-                        errorMessage = 'AI模型调用频率过高，请稍后重试或联系管理员增加请求限制';
-                    } else if (error.code === 'insufficient_quota') {
-                        errorMessage = 'AI模型调用次数已超出配额限制，请稍后重试或联系管理员增加配额';
-                    } else {
-                        errorMessage = 'AI模型服务暂时不可用，请稍后重试';
-                    }
-                }
-                // 处理403错误和免费额度用尽错误
-                else if (error.status === 403 || error.code === 'AllocationQuota.FreeTierOnly') {
-                    errorMessage = 'AI模型免费额度已用尽，请联系管理员升级服务';
-                } 
-                // 处理400输入长度超出限制错误
-                else if (error.status === 400 && error.code === 'invalid_parameter_error') {
-                    if (error.message && error.message.includes('Range of input length should be')) {
-                        errorMessage = '您的请求内容过长，请尝试简化问题或减少输入内容';
-                    } else {
-                        errorMessage = '请求参数错误，请检查输入内容';
-                    }
-                }
-                // 处理网络连接错误
-                else if (error.code === 'ECONNREFUSED') {
-                    errorMessage = '无法连接到AI服务，请检查网络连接';
-                } else if (error.code === 'ENOTFOUND') {
-                    errorMessage = 'AI服务地址无法解析，请稍后重试';
-                }
-                
-                // 检查WebSocket连接是否仍然打开，再发送错误消息
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'error', content: errorMessage }));
+            console.error('WebSocket处理错误:', error);
+
+            // 根据错误类型返回不同的错误信息
+            let errorMessage = '服务暂时不可用，请稍后重试';
+
+            // 处理429错误
+            if (error.status === 429) {
+                if (error.code === 'limit_requests') {
+                    errorMessage = 'AI模型调用频率过高，请稍后重试或联系管理员增加请求限制';
+                } else if (error.code === 'insufficient_quota') {
+                    errorMessage = 'AI模型调用次数已超出配额限制，请稍后重试或联系管理员增加配额';
                 } else {
-                    console.error('WebSocket连接已关闭，无法发送错误消息');
+                    errorMessage = 'AI模型服务暂时不可用，请稍后重试';
                 }
+            }
+            // 处理403错误和免费额度用尽错误
+            else if (error.status === 403 || error.code === 'AllocationQuota.FreeTierOnly') {
+                errorMessage = 'AI模型免费额度已用尽，请联系管理员升级服务';
+            }
+            // 处理400输入长度超出限制错误
+            else if (error.status === 400 && error.code === 'invalid_parameter_error') {
+                if (error.message && error.message.includes('Range of input length should be')) {
+                    errorMessage = '您的请求内容过长，请尝试简化问题或减少输入内容';
+                } else {
+                    errorMessage = '请求参数错误，请检查输入内容';
+                }
+            }
+            // 处理网络连接错误
+            else if (error.code === 'ECONNREFUSED') {
+                errorMessage = '无法连接到AI服务，请检查网络连接';
+            } else if (error.code === 'ENOTFOUND') {
+                errorMessage = 'AI服务地址无法解析，请稍后重试';
+            }
+
+            // 检查WebSocket连接是否仍然打开，再发送错误消息
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'error', content: errorMessage }));
+            } else {
+                console.error('WebSocket连接已关闭，无法发送错误消息');
+            }
         }
     });
-    
+
     // 处理连接关闭
     ws.on('close', () => {
         console.log('WebSocket连接关闭');
@@ -470,7 +470,7 @@ wss.on('connection', (ws) => {
         connectionConversations.delete(ws);
         console.log('连接对话历史已清理');
     });
-    
+
     // 处理错误
     ws.on('error', (error) => {
         console.error('WebSocket错误:', error);
@@ -482,23 +482,23 @@ app.get('/api/download-image/:sliceid', async (req, res) => {
     try {
         // 获取sliceid路径参数
         const sliceid = req.params.sliceid;
-        
+
         // 使用getSliceUrl函数获取图片URL
         const imageUrl = await getSliceUrl(sliceid);
 
         if (!imageUrl) {
             return res.status(404).json({ error: '图片不存在或获取URL失败' });
         }
-        
+
         // 使用axios下载图片
         const response = await axios.get(imageUrl, {
             responseType: 'arraybuffer'
         });
-        
+
         // 设置响应头
         res.setHeader('Content-Type', response.headers['content-type']);
         res.setHeader('Content-Length', response.headers['content-length']);
-        
+
         // 返回图片数据
         res.send(response.data);
     } catch (error) {
@@ -544,7 +544,7 @@ app.get('/api/admin/tokens-usage-monitor', (req, res) => {
     try {
         // 读取HTML文件
         const html = fs.readFileSync(path.join(appRoot.path, 'html/tokens-usage-monitor.html'), 'utf8');
-        
+
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     } catch (error) {
@@ -558,7 +558,7 @@ app.get('/api/admin', (req, res) => {
     try {
         // 读取HTML文件
         const html = fs.readFileSync(path.join(appRoot.path, 'html/admin.html'), 'utf8');
-        
+
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     } catch (error) {

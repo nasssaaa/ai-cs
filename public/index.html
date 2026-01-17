@@ -1,219 +1,411 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>煜桐客服</title>
+    <title>煜桐客服 | 智能助手</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --message-user-bg: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --message-ai-bg: rgba(255, 255, 255, 0.05);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            overflow: hidden;
-        }
-        
-        .chat-container {
-            width: 100vw;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
             height: 100vh;
-            background-color: #2d2d2d;
+            width: 100vw;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
         }
-        
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .chat-container {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            background: rgba(30, 41, 59, 0.4);
+            /* Slightly simplified bg for full screen */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            position: relative;
+        }
+
+        /* Fancy background orbs */
+        .chat-container::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(118, 75, 162, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
+            top: -100px;
+            left: -100px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
         .chat-header {
-            background-color: #404040;
-            color: #ffffff;
-            padding: 15px 20px;
-            border-bottom: 1px solid #555;
+            padding: 20px 30px;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--glass-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
         }
-        
+
+        .chat-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-logo {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+        }
+
         .chat-title {
-            flex: 1;
-            margin: 0;
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
         }
-        
-        .clear-button {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 8px 15px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
+
+        .chat-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 400;
         }
-        
-        .clear-button:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-        
+
+
+
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 30px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            background-color: #2d2d2d;
+            gap: 24px;
+            scroll-behavior: smooth;
         }
-        
+
+        /* Custom Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
         .message {
-            max-width: 70%;
-            padding: 12px 18px;
-            border-radius: 18px;
-            word-wrap: break-word;
-            line-height: 1.4;
+            max-width: 80%;
+            padding: 16px 24px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            position: relative;
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
         }
-        
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .message-image {
-            max-width: 200px;
-            height: auto;
-            border-radius: 10px;
-            margin: 10px 0;
-            display: block;
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-        
+
         .user-message {
             align-self: flex-end;
-            background-color: #4CAF50;
+            background: var(--message-user-bg);
             color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
         }
-        
+
         .ai-message {
             align-self: flex-start;
-            background-color: #404040;
-            color: #ffffff;
-            border: 1px solid #555;
+            background: var(--message-ai-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
         }
-        
+
         .ai-thinking {
-            background-color: #404040;
-            color: #ffffff;
-            border: 1px solid #555;
-            animation: thinking-pulse 1.5s infinite;
-        }
-        
-        @keyframes thinking-pulse {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-        }
-        
-        .thinking-dots {
-            display: inline-block;
-        }
-        
-        .thinking-dots::after {
-            content: '';
-            animation: dots 2s infinite;
-        }
-        
-        @keyframes dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
-        }
-        
-        .chat-input {
-            display: flex;
-            padding: 20px;
-            border-top: 1px solid #555;
-            gap: 15px;
-            background-color: #404040;
-        }
-        
-        #message-input {
-            flex: 1;
+            align-self: flex-start;
+            background: var(--message-ai-bg);
+            border: 1px solid var(--glass-border);
             padding: 12px 20px;
-            border: 1px solid #555;
-            border-radius: 25px;
-            outline: none;
-            font-size: 14px;
-            background-color: #555;
-            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
-        #message-input::placeholder {
-            color: #888;
-        }
-        
-        #message-input:focus {
-            border-color: #4CAF50;
-            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-        }
-        
-        #send-button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
+
+        .thinking-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--text-secondary);
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .thinking-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .chat-input {
+            padding: 24px 30px;
+            background: rgba(15, 23, 42, 0.6);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        #message-input {
+            width: 100%;
+            padding: 16px 24px;
+            padding-right: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        #message-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(118, 75, 162, 0.5);
+            box-shadow: 0 0 0 4px rgba(118, 75, 162, 0.15);
+        }
+
+        #message-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        #send-button {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
         }
-        
+
+        #send-button svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            transform: translateX(2px);
+        }
+
         #send-button:hover {
-            background-color: #45a049;
-            transform: scale(1.05);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
+        }
+
+        #send-button:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        /* Avatar styles */
+        .message-group {
+            display: flex;
+            gap: 12px;
+            max-width: 80%;
+        }
+
+        .message-group.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar.ai {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .avatar.user {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Update message max-width when in group */
+        .message-group .message {
+            max-width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                max-width: 100%;
+            }
+
+            .message {
+                max-width: 85%;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h2 class="chat-title">煜桐客服平台</h2>
-            <button id="clear-button" class="clear-button" title="清除聊天记录">🗑️</button>
+            <div class="chat-title-group">
+                <div class="chat-logo">🤖</div>
+                <div>
+                    <h2 class="chat-title">煜桐客服</h2>
+                    <div class="chat-subtitle">AI 智能助手在线</div>
+                </div>
+            </div>
+
         </div>
+
         <div class="chat-messages" id="chat-messages">
-            <div class="message ai-message">您好！请问有什么可以帮助您的？</div>
+            <!-- Messages will be injected here -->
+            <div class="message-group ai">
+                <div class="avatar ai">AI</div>
+                <div class="message ai-message">您好！我是煜桐AI客服，很高兴为您服务。请问有什么可以帮您？✨</div>
+            </div>
         </div>
+
         <div class="chat-input">
-            <input type="text" id="message-input" placeholder="请输入您的问题...">
-            <button id="send-button">➤</button>
+            <div class="input-wrapper">
+                <input type="text" id="message-input" placeholder="输入您的问题..." autocomplete="off">
+            </div>
+            <button id="send-button" aria-label="发送">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                </svg>
+            </button>
         </div>
     </div>
-    
+
     <script>
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
         const chatMessages = document.getElementById('chat-messages');
-        const clearButton = document.getElementById('clear-button');
-        
-        // WebSocket连接
+
+
         let ws;
         let isWsConnected = false;
-        
-        // 初始化WebSocket连接
+        let thinkingElementParent = null; // To track the thinking message container
+
         function initWebSocket() {
-            // 构建WebSocket URL
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}`;
-            
+
             try {
                 ws = new WebSocket(wsUrl);
-                
+
                 ws.onopen = () => {
                     console.log('WebSocket连接已建立');
                     isWsConnected = true;
                 };
-                
+
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
@@ -222,14 +414,13 @@
                         console.error('解析WebSocket消息失败:', error);
                     }
                 };
-                
+
                 ws.onclose = () => {
                     console.log('WebSocket连接已关闭');
                     isWsConnected = false;
-                    // 5秒后尝试重连
                     setTimeout(initWebSocket, 5000);
                 };
-                
+
                 ws.onerror = (error) => {
                     console.error('WebSocket错误:', error);
                     isWsConnected = false;
@@ -237,119 +428,112 @@
             } catch (error) {
                 console.error('WebSocket连接建立失败:', error);
                 isWsConnected = false;
-                // 5秒后尝试重连
                 setTimeout(initWebSocket, 5000);
             }
         }
-        
-        // 处理WebSocket消息
+
         function handleWebSocketMessage(data) {
             const { type, content } = data;
-            
+
+            // Remove thinking message if exists
+            if (thinkingElementParent) {
+                removeThinkingMessage();
+            }
+
             switch (type) {
                 case 'chat':
-                    // 移除思考提示并显示AI回复
-                    removeThinkingMessage(thinkingElement);
                     displayMessage(content, 'ai');
                     break;
                 case 'error':
-                    // 移除思考提示并显示错误消息
-                    removeThinkingMessage(thinkingElement);
-                    displayMessage(content, 'ai');
+                    displayMessage(content, 'ai'); // Display error as AI message for now
                     break;
                 default:
                     console.log('未知的消息类型:', type);
             }
         }
-        
-        // 思考中消息元素（全局变量）
-        let thinkingElement;
-        
-        // 清除聊天记录
-        function clearChat() {
-            // 移除所有思考提示
-            const thinkingElements = chatMessages.querySelectorAll('.ai-thinking');
-            thinkingElements.forEach(element => {
-                if (element.parentNode) {
-                    element.parentNode.removeChild(element);
-                }
-            });
-            
-            // 清除所有消息除了欢迎消息
-            chatMessages.innerHTML = '<div class="message ai-message">您好！我是AI客服，请问有什么可以帮助您的？</div>';
-        }
-        
-        // 发送消息
+
+
+
         function sendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
-            
-            // 显示用户消息
+
             displayMessage(message, 'user');
             messageInput.value = '';
-            
+
             try {
                 if (!isWsConnected) {
                     throw new Error('WebSocket连接未建立');
                 }
-                
-                // 显示思考中提示
-                thinkingElement = showThinkingMessage();
-                
-                // 使用WebSocket发送消息
+
+                showThinkingMessage();
                 ws.send(JSON.stringify({ type: 'chat', content: message }));
             } catch (error) {
                 console.error('发送消息失败:', error);
-                // 移除思考提示并显示错误消息
-                if (thinkingElement) {
-                    removeThinkingMessage(thinkingElement);
-                    thinkingElement = null;
+                if (thinkingElementParent) {
+                    removeThinkingMessage();
                 }
-                displayMessage('抱歉，WebSocket连接失败，请稍后重试。', 'ai');
+                displayMessage('抱歉，连接出现问题，请稍后重试。', 'ai');
             }
         }
-        
-        // 显示思考中消息
+
         function showThinkingMessage() {
-            const thinkingDiv = document.createElement('div');
-            thinkingDiv.className = 'message ai-thinking';
-            thinkingDiv.innerHTML = '<span class="thinking-dots">正在思考中</span>';
-            chatMessages.appendChild(thinkingDiv);
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'message-group ai';
+
+            groupDiv.innerHTML = `
+                <div class="avatar ai">AI</div>
+                <div class="message ai-thinking">
+                    <div class="thinking-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span style="font-size: 0.9em; margin-left: 8px;">思考中...</span>
+                </div>
+            `;
+
+            chatMessages.appendChild(groupDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            return thinkingDiv;
+            thinkingElementParent = groupDiv;
         }
-        
-        // 移除思考中消息
-        function removeThinkingMessage(thinkingElement) {
-            if (thinkingElement && thinkingElement.parentNode) {
-                thinkingElement.parentNode.removeChild(thinkingElement);
+
+        function removeThinkingMessage() {
+            if (thinkingElementParent && thinkingElementParent.parentNode) {
+                thinkingElementParent.parentNode.removeChild(thinkingElementParent);
             }
+            thinkingElementParent = null;
         }
-        
-        // 显示消息
+
         function displayMessage(text, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = type === 'user' ? 'message user-message' : 'message ai-message';
-            
-            // 直接使用后端处理后的内容（已包含解析好的图片标签）
-            messageDiv.innerHTML = text;
-            chatMessages.appendChild(messageDiv);
+            const groupDiv = document.createElement('div');
+            groupDiv.className = `message-group ${type === 'user' ? 'user' : 'ai'}`;
+
+            const avatarHtml = type === 'user'
+                ? '<div class="avatar user">Me</div>'
+                : '<div class="avatar ai">AI</div>';
+
+            const messageClass = type === 'user' ? 'user-message' : 'ai-message';
+
+            groupDiv.innerHTML = `
+                ${avatarHtml}
+                <div class="message ${messageClass}">${text}</div>
+            `;
+
+            chatMessages.appendChild(groupDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
-        // 事件监听
+
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
-        
-        // 清除按钮事件监听
-        clearButton.addEventListener('click', clearChat);
-        
-        // 页面加载完成后初始化WebSocket连接
+
+
         window.addEventListener('load', initWebSocket);
     </script>
 </body>
+
 </html>

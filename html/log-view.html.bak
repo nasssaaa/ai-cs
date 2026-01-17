@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日志查看 - {{filename}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #4CAF50;
+        }
+        
+        .back-button {
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background-color: #0b7dda;
+        }
+        
+        .log-container {
+            background-color: #2d2d2d;
+            border-radius: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        
+        .log-entry {
+            padding: 20px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-timestamp {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .log-user,
+        .log-ai {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+        
+        .log-user {
+            background-color: #3a3a3a;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .log-ai {
+            background-color: #3a3a3a;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .log-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .no-entries {
+            padding: 30px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 日志查看 - {{filename}}</h1>
+            <a href="/api/admin/logs" class="back-button">← 返回日志列表</a>
+        </div>
+        
+        <div class="log-container">
+            {{logEntries}}
+        </div>
+    </div>
+</body>
+</html>

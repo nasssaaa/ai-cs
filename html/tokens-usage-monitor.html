@@ -1,98 +1,177 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tokens使用量监控</title>
+    <title>Tokens使用监控 | 煜桐管理</title>
     <!-- 引入ECharts -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        * {
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --card-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
             margin: 0;
             padding: 0;
+            /* Remove padding for full screen */
+            height: 100vh;
+            width: 100vw;
+            box-sizing: border-box;
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .container {
+            width: 100%;
+            max-width: none;
+            /* Full width */
+            margin: 0;
+            background: rgba(15, 23, 42, 0.4);
+            /* Slightly efficient bg for full screen */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 30px 40px;
+            /* Internal spacing */
+            border-radius: 0;
+            /* No radius */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+            border: none;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            /* Explicit full height */
             box-sizing: border-box;
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            overflow-x: hidden;
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            flex-shrink: 0;
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: #2d2d2d;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-        
+
         h1 {
-            color: #ffffff;
-            text-align: center;
-            margin-bottom: 30px;
+            color: var(--text-primary);
+            margin: 0;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 600;
         }
-        
+
         #chart-container {
             width: 100%;
-            height: 500px;
-            margin-bottom: 30px;
+            flex: 1;
+            /* Restore flex to fill space */
+            height: auto;
+            min-height: 0;
+            /* Critical for flex child */
+            margin-bottom: 20px;
+            border-radius: 16px;
+            padding: 10px;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            box-sizing: border-box;
+            position: relative;
         }
-        
+
         .stats {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #404040;
-            border-radius: 8px;
-            border: 1px solid #555;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            flex-shrink: 0;
         }
-        
+
         .stat-item {
             text-align: center;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            transition: transform 0.3s ease;
         }
-        
+
+        .stat-item:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4CAF50;
+            font-size: 28px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
         }
-        
+
         .stat-label {
-            color: #cccccc;
-            margin-top: 5px;
-            font-size: 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
         }
-        
+
         .back-button {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
             text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        
+
         .back-button:hover {
-            background-color: #45a049;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-2px);
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <a href="/api/admin" class="back-button">← 返回后台导航</a>
-        <h1>📊 Tokens使用量监控</h1>
-        
+        <div class="header">
+            <a href="/api/admin" class="back-button">← 返回</a>
+            <h1>📊 Tokens使用量监控</h1>
+            <div style="width: 80px;"></div>
+        </div>
+
         <div id="chart-container"></div>
-        
+
         <div class="stats">
             <div class="stat-item">
                 <div class="stat-value" id="total-tokens">0</div>
@@ -108,139 +187,130 @@
             </div>
         </div>
     </div>
-    
+
     <script>
-        // 初始化图表
         const chart = echarts.init(document.getElementById('chart-container'));
-        
-        // 获取使用量数据
+
         async function getUsageData() {
             const response = await fetch('/api/tokens-usage');
             return await response.json();
         }
-        
-        // 更新图表和统计信息
+
         async function updateChart() {
             const usageData = await getUsageData();
-            
-            // 计算统计数据
-            const totalTokens = usageData.reduce(function(sum, item) { return sum + item[1]; }, 0).toFixed(2);
+
+            const totalTokens = usageData.reduce(function (sum, item) { return sum + item[1]; }, 0).toFixed(2);
             const avgTokens = (totalTokens / usageData.length).toFixed(2);
-            const maxTokens = Math.max.apply(null, usageData.map(function(item) { return item[1]; })).toFixed(2);
-            
-            // 更新统计信息
+            const maxTokens = Math.max.apply(null, usageData.map(function (item) { return item[1]; })).toFixed(2);
+
             document.getElementById('total-tokens').textContent = totalTokens;
             document.getElementById('avg-tokens').textContent = avgTokens;
             document.getElementById('max-tokens').textContent = maxTokens;
-            
-            // 配置图表选项
+
             const option = {
-                backgroundColor: '#2d2d2d',
-                title: {
-                    text: '每日Tokens使用量趋势',
-                    left: 'center',
-                    textStyle: {
-                        color: '#ffffff',
-                        fontSize: 18
-                    }
-                },
+                backgroundColor: 'transparent',
+                maintainAspectRatio: false, // Ensure chart fits container
                 tooltip: {
                     trigger: 'axis',
-                    formatter: function(params) {
+                    formatter: function (params) {
                         const date = params[0].name;
                         const tokens = params[0].value;
-                        return date + '<br/>Tokens使用量: ' + tokens + ' k';
+                        return `${date}<br/><span style="color:#a5b4fc">Nodes</span>: <b>${tokens} k</b>`;
                     },
-                    backgroundColor: 'rgba(64, 64, 64, 0.9)',
-                    borderColor: '#555',
+                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
                     textStyle: {
-                        color: '#ffffff'
-                    }
+                        color: '#e2e8f0'
+                    },
+                    padding: 12,
+                    borderRadius: 8
+                },
+                grid: {
+                    top: 60,
+                    bottom: 20,
+                    left: 50,
+                    right: 20,
+                    containLabel: true
                 },
                 xAxis: {
                     type: 'category',
-                    data: usageData.map(function(item) { return item[0]; }),
+                    data: usageData.map(function (item) { return item[0]; }),
                     axisLabel: {
                         rotate: 45,
-                        interval: 2,
-                        color: '#cccccc',
-                        fontSize: 12
+                        interval: 'auto', // Better auto-interval
+                        color: '#94a3b8',
+                        fontSize: 12,
+                        fontFamily: 'Inter'
                     },
                     axisLine: {
                         lineStyle: {
-                            color: '#555'
+                            color: 'rgba(255, 255, 255, 0.1)'
                         }
                     },
-                    axisTick: {
-                        lineStyle: {
-                            color: '#555'
-                        }
-                    }
+                    axisTick: { show: false }
                 },
                 yAxis: {
                     type: 'value',
-                    name: 'Tokens使用量 (k)',
+                    name: 'Tokens (k)',
                     nameTextStyle: {
-                        color: '#cccccc',
-                        fontSize: 14
+                        color: '#94a3b8',
+                        fontSize: 12,
+                        padding: [0, 0, 0, 20]
                     },
                     axisLabel: {
-                        formatter: '{value} k',
-                        color: '#cccccc',
-                        fontSize: 12
-                    },
-                    axisLine: {
-                        lineStyle: {
-                            color: '#555'
-                        }
-                    },
-                    axisTick: {
-                        lineStyle: {
-                            color: '#555'
-                        }
+                        formatter: '{value}',
+                        color: '#94a3b8',
+                        fontFamily: 'Inter'
                     },
                     splitLine: {
                         lineStyle: {
-                            color: '#404040'
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            type: 'dashed'
                         }
                     }
                 },
                 series: [{
-                    data: usageData.map(function(item) { return +item[1].toFixed(2); }),
+                    data: usageData.map(function (item) { return +item[1].toFixed(2); }),
                     type: 'line',
                     smooth: true,
                     symbol: 'circle',
                     symbolSize: 8,
-                    lineStyle: {
-                        width: 3,
-                        color: '#4CAF50'
-                    },
                     itemStyle: {
-                        color: '#4CAF50'
+                        color: '#818cf8',
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    },
+                    lineStyle: {
+                        width: 4,
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#667eea' },
+                            { offset: 1, color: '#764ba2' }
+                        ]),
+                        shadowColor: 'rgba(118, 75, 162, 0.3)',
+                        shadowBlur: 10,
+                        shadowOffsetY: 5
                     },
                     areaStyle: {
                         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                            { offset: 0, color: 'rgba(76, 175, 80, 0.3)' },
-                            { offset: 1, color: 'rgba(76, 175, 80, 0.05)' }
+                            { offset: 0, color: 'rgba(118, 75, 162, 0.3)' },
+                            { offset: 1, color: 'rgba(118, 75, 162, 0)' }
                         ])
                     }
                 }]
             };
-            
-            // 设置图表选项
+
             chart.setOption(option);
+            chart.resize(); // Resize immediately after setOption
         }
-        
-        // 初始更新
+
         updateChart();
-        
-        // 响应式处理
-        window.addEventListener('resize', function() {
+
+        window.addEventListener('resize', function () {
             chart.resize();
         });
-        
-        // 定时更新
+
         setInterval(updateChart, 5000);
     </script>
 </body>
+
 </html>

@@ -1,209 +1,354 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日志文件列表</title>
+    <title>日志文件列表 | 煜桐管理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-green: #10b981;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a1a;
-            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+            box-sizing: border-box;
         }
-        
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
         .container {
-            max-width: 600px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: none;
+            border-radius: 0;
+            padding: 30px 40px;
+            box-shadow: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
         }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #4CAF50;
-        }
-        
-        .filter-container {
-            background-color: #2d2d2d;
-            padding: 20px;
-            border-radius: 10px;
+
+        .header-group {
+            display: flex;
+            align-items: center;
             margin-bottom: 20px;
-            border: 1px solid #444;
+            position: relative;
+            flex-shrink: 0;
         }
-        
+
+        .header-group h1 {
+            flex: 1;
+            text-align: center;
+            font-size: 24px;
+            margin: 0;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-2px);
+        }
+
+        .log-list-wrapper {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 16px;
+            flex: 1;
+            /* Match full screen behavior */
+            min-height: 0;
+            /* CRITICAL: Allows flex child to shrink below content size */
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Clips the corners so scrollbar doesn't stick out */
+            position: relative;
+            /* Context for children */
+        }
+
+        .filter-container {
+            background: rgba(15, 23, 42, 0.3);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+
         .filter-form {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
         }
-        
+
         .filter-form label {
-            font-weight: bold;
-            color: #ccc;
+            font-weight: 500;
+            color: var(--text-secondary);
         }
-        
+
         .filter-form input[type="date"] {
-            padding: 8px 12px;
-            background-color: #3a3a3a;
-            border: 1px solid #555;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-        }
-        
-        .filter-form input[type="submit"],
-        .filter-form a {
-            padding: 8px 20px;
-            background-color: #2196F3;
-            color: white;
-            text-decoration: none;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        
-        .filter-form input[type="submit"]:hover,
-        .filter-form a:hover {
-            background-color: #0b7dda;
-        }
-        
-        .log-list {
-            background-color: #2d2d2d;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
             border-radius: 10px;
-            max-height: 500px;
-            overflow-y: auto;
-            border: 1px solid #444;
-        }
-        
-        .log-item {
-            padding: 15px 20px;
-            border-bottom: 1px solid #444;
+            color: var(--text-primary);
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            /* Indicate it's clickable */
+            user-select: none;
+            /* Disable text selection */
+            caret-color: transparent;
+            /* Hide cursor */
+        }
+
+        /* Hide the default calendar icon */
+        .filter-form input[type="date"]::-webkit-calendar-picker-indicator {
+            display: none;
+            -webkit-appearance: none;
+        }
+
+        .filter-form input[type="date"]:focus {
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(118, 75, 162, 0.4);
+        }
+
+        .btn-text {
+            color: var(--text-secondary);
+            background: transparent;
+        }
+
+        .btn-text:hover {
+            color: var(--text-primary);
+        }
+
+        .log-list {
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 16px;
+            max-height: none;
+            /* remove specific max-height */
+            flex: 1;
+            /* Match full screen behavior */
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+        }
+
+        .log-item {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .log-item:last-child {
             border-bottom: none;
         }
-        
+
         .log-item:hover {
-            background-color: #3a3a3a;
+            background: rgba(255, 255, 255, 0.03);
         }
-        
-        .log-item:active {
-            background-color: #444;
-        }
-        
+
         .log-date {
-            font-weight: bold;
+            font-weight: 600;
             font-size: 16px;
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
         }
-        
+
         .log-time {
-            color: #4CAF50;
-            font-size: 14px;
-            margin: 5px 0;
-        }
-        
-        .log-info {
-            color: #aaa;
-            font-size: 14px;
-        }
-        
-        .no-logs {
-            padding: 30px;
-            text-align: center;
-            color: #777;
-        }
-        
-        .back-button {
+            color: var(--accent-green);
+            font-size: 13px;
             display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-top: 4px;
         }
-        
-        .back-button:hover {
-            background-color: #45a049;
+
+        .log-info {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-left: 10px;
         }
-        
-        .view-button {
-            padding: 5px 15px;
-            background-color: #2196F3;
-            color: white;
+
+        .view-btn {
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
             text-decoration: none;
-            border-radius: 15px;
+            border-radius: 8px;
             font-size: 12px;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
         }
-        
-        .view-button:hover {
-            background-color: #0b7dda;
+
+        .view-btn:hover {
+            background: var(--primary-gradient);
+            border-color: transparent;
         }
-        
-        /* 滚动条样式 */
-        .log-list::-webkit-scrollbar {
-            width: 8px;
+
+        .no-logs {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
         }
-        
-        .log-list::-webkit-scrollbar-track {
-            background: #333;
-            border-radius: 4px;
+
+        /* Scroll container - strictly positioned */
+        .log-list-scroll {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow-y: auto;
+            border-radius: 16px;
+            /* Match parent radius */
         }
-        
-        .log-list::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 4px;
+
+        /* Custom Scrollbar - moved to inner scroll container */
+        .log-list-scroll::-webkit-scrollbar {
+            width: 6px;
         }
-        
-        .log-list::-webkit-scrollbar-thumb:hover {
-            background: #777;
+
+        .log-list-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-list-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .nav-arrow {
+            color: var(--text-secondary);
+            font-size: 18px;
+            opacity: 0.5;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .log-item:hover .nav-arrow {
+            opacity: 1;
+            transform: translateX(5px);
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <a href="/api/admin" class="back-button">← 返回后台导航</a>
-        <h1>📋 日志文件列表</h1>
-        
+        <div class="header-group">
+            <a href="/api/admin" class="back-button">
+                <span>←</span> 返回
+            </a>
+            <h1>日志列表</h1>
+            <div style="width: 70px;"></div> <!-- Spacer for visuals -->
+        </div>
+
         <div class="filter-container">
             <form class="filter-form" method="get">
                 <label for="date">选择日期:</label>
-                <input type="date" id="date" name="date" value="{{filterDate}}">
-                <input type="submit" value="筛选">
-                <a href="/api/admin/logs">清除筛选</a>
+                <input type="date" id="date" name="date" value="{{filterDate}}" onchange="this.form.submit()"
+                    onclick="try{this.showPicker()}catch(e){}" onmousedown="event.preventDefault()">
+                <!-- <input type="submit" value="筛选" class="btn btn-primary"> Removed as requested -->
             </form>
         </div>
-        
-        <div class="log-list">
-            {{logItems}}
+
+        <div class="log-list-wrapper">
+            <div class="log-list-scroll">
+                {{logItems}}
+            </div>
         </div>
     </div>
-    
+
     <script>
-        // 为日志项添加点击事件
         document.querySelectorAll('.log-item').forEach(item => {
             item.addEventListener('click', () => {
-                const viewButton = item.querySelector('.view-button');
-                if (viewButton) {
-                    window.location.href = viewButton.href;
+                const href = item.dataset.href;
+                if (href) {
+                    window.location.href = href;
                 }
             });
         });
-        
-        // 设置日期选择器的最大日期为今天
+
         document.getElementById('date').max = new Date().toISOString().split('T')[0];
     </script>
 </body>
+
 </html>
