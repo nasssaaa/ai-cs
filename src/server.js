@@ -521,7 +521,11 @@ const readTokensUsageData = () => {
 // 保存tokens使用量数据
 const saveTokensUsageData = (data) => {
     try {
-        fs.writeFileSync(path.join(appRoot.path, 'data/tokens-usage.json'), JSON.stringify(data, null, 2), 'utf8');
+        const dataDir = path.join(appRoot.path, 'data');
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(dataDir, 'tokens-usage.json'), JSON.stringify(data, null, 2), 'utf8');
         return true;
     } catch (error) {
         console.error('保存tokens使用量数据失败:', error);
