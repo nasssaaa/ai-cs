@@ -529,8 +529,14 @@ const saveTokensUsageData = (data) => {
     }
 };
 
+// 确保data目录存在
+const dataDir = path.join(appRoot.path, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+}
+
 // 确保tokens使用量数据文件存在
-if (!fs.existsSync(path.join(appRoot.path, 'data/tokens-usage.json'))) {
+if (!fs.existsSync(path.join(dataDir, 'tokens-usage.json'))) {
     saveTokensUsageData([]);
     console.log('创建tokens-usage.json文件成功');
 }
