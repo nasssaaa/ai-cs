@@ -264,6 +264,11 @@ app.get('/api/admin/logs/:filename', (req, res) => {
             `);
         }
 
+        // 解析文件名，提取连接ID
+        // filename格式: YYYY-MM-DD-HH-mm-ss-connectionId.log
+        const parts = filename.split('.')[0].split('-');
+        const connectionId = parts.slice(6).join('-') || 'unknown';
+
         const logContent = fs.readFileSync(logPath, 'utf8');
         const logEntries = logContent.trim().split('\n')
             .map(line => JSON.parse(line))
@@ -289,6 +294,7 @@ app.get('/api/admin/logs/:filename', (req, res) => {
 
         // 替换模板变量 - 使用全局替换以替换所有匹配项
         let html = htmlTemplate.replace(/{{filename}}/g, filename);
+        html = html.replace(/{{connectionId}}/g, connectionId);
         html = html.replace('{{logEntries}}', logEntriesHtml);
 
         res.setHeader('Content-Type', 'text/html');

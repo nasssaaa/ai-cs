@@ -342,7 +342,7 @@
             item.addEventListener('click', () => {
                 const href = item.dataset.href;
                 if (href) {
-                    window.location.href = href;
+                    window.open(href, '_blank');
                 }
             });
         });
