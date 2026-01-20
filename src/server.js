@@ -384,9 +384,6 @@ wss.on('connection', (ws) => {
                 const aiReply = await getAiResponse(userMessage, historyFormat);
                 console.log('AI回复:', aiReply);
 
-                // 记录聊天到连接专用日志
-                logChat(userMessage, aiReply, logFile);
-
                 // 更新对话历史
                 const newEntry = {
                     timestamp: new Date().toISOString(),
@@ -421,6 +418,9 @@ wss.on('connection', (ws) => {
 
                 // 解析AI回复中的插图标记
                 const processedReply = parseIllustrationTags(aiReply);
+
+                // 记录聊天到连接专用日志
+                logChat(userMessage, processedReply, logFile);
 
                 // 发送处理后的回复给客户端
                 ws.send(JSON.stringify({ type: 'chat', content: processedReply }));
