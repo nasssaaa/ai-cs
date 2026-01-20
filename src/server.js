@@ -409,7 +409,7 @@ wss.on('connection', (ws) => {
 
                     processedText = processedText.replace(illustrationRegex, (match, sliceId) => {
                         // 检查data-ref是否是完整的URL 
-                        const result = `<img src="/api/download-image/${sliceId}" alt="${sliceId}" class="message-image">`
+                        const result = `<br><img src="/api/download-image/${sliceId}" alt="${sliceId}" class="message-image"><br>`
                         return result;
                     });
 
