@@ -1,0 +1,94 @@
+const openAI = require('openai')
+const fs = require('fs')
+const { updateTokensUsage } = require('./tokensMonitor')
+
+const client = new openAI.OpenAI({
+    apiKey: 'afe01879-d881-45f6-bbb4-fc8a34390aa5',
+    baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
+    defaultHeaders: { "ark-beta-knowledge-search": "true" }
+})
+
+const prompt = fs.readFileSync('./prompt.md', 'utf-8')
+
+async function getAiResponse(msg, history) {
+    try {
+        const response = await client.responses.create(
+            {
+                model: "doubao-seed-1-8-251228",
+                input: [
+                    {
+                        "role": "system",
+                        "content": prompt
+                    },
+                    ...history,
+                    {
+                        "role": "user",
+                        "content": msg
+                    }
+                ],
+                thinking: {
+                    type: 'disabled'
+                },
+                temperature: 0.2,
+                tools: [
+                    qrcode_tool,
+                    {
+                        "type": "knowledge_search",
+                        "knowledge_resource_id": "kb-812e5662c92cacb2",
+                        "limit": 10,
+                    }
+                ]
+            }
+        )
+        console.log(response)
+        const tokens = response.usage.total_tokens
+        updateTokensUsage(new Date().toISOString().split('T')[0], tokens)
+        return response.output_text;
+    } catch (error) {
+        console.error(`Error calling AIModel: ${error.message}`);
+        if (error.response) {
+            console.error(`Response status: ${error.response.status}`);
+            console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+        }
+    }
+    return '调用AI模型失败';
+}
+
+async function sendPrefixMsg() {
+    try {
+        const response = await client.responses.create(
+            {
+                model: "doubao-seed-1-8-251228",
+                input: [
+                    {
+                        "role": "system",
+                        "content": prompt
+                    }
+                ],
+                caching: {
+                    type: 'enabled',
+                    prefix: true
+                },
+                thinking: {
+                    type: 'disabled'
+                }
+            }
+        )
+        const tokens = response.usage.total_tokens
+        updateTokensUsage(new Date().toISOString().split('T')[0], tokens)
+        console.log(response)
+        return response.id;
+    } catch (error) {
+        console.error(`Error calling AIModel: ${error.message}`);
+        if (error.response) {
+            console.error(`Response status: ${error.response.status}`);
+            console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
+        }
+    }
+    return -1;
+}
+
+module.exports = {
+    getAiResponse,
+    sendPrefixMsg
+}

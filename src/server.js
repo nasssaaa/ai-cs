@@ -7,6 +7,7 @@ const http = require('http');
 const axios = require('axios');
 const { Signer } = require('@volcengine/openapi');
 const appRoot = require('app-root-path');
+const { getAiResponse } = require('./api');
 // 确保logs目录存在
 const logsDir = path.join(appRoot.path, 'logs');
 if (!fs.existsSync(logsDir)) {
@@ -52,89 +53,6 @@ async function getSliceUrl(sliceId) {
         }
     }
     return null;
-}
-
-async function updateTokensUsage(date, tokens) {
-    try {
-        // 验证数据格式
-        if (!date || typeof tokens !== 'number') {
-            return res.status(400).json({ error: '无效的数据格式' });
-        }
-
-        console.log(`date=${date}, tokens=${tokens}`)
-
-        // 读取现有数据
-        const usageData = readTokensUsageData();
-
-        // 查找是否已有该日期的数据
-        const index = usageData.findIndex(item => item[0] === date);
-
-        if (index !== -1) {
-            // 更新现有数据
-            usageData[index][1] += parseFloat(tokens / 1000);
-        } else {
-            // 添加新数据
-            usageData.push([date, parseFloat(tokens / 1000)]);
-        }
-
-        // 保存更新后的数据
-        const success = saveTokensUsageData(usageData);
-
-        if (!success) {
-            res.status(500).json({ error: '数据保存失败' });
-        }
-    } catch (error) {
-        console.error('保存tokens使用量数据失败:', error);
-        res.status(500).json({ error: '服务器错误', message: error.message });
-    }
-}
-
-//ai应用调用函数
-async function getAiResponse(prompt, history) {
-    const appId = 'kb-service-ba9238d019914937'
-    const apiKey = 'afe01879-d881-45f6-bbb4-fc8a34390aa5'
-
-    const url = `https://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
-    const data = {
-        service_resource_id: appId,
-        messages: [
-            ...history,
-            {
-                role: "user",
-                content: prompt
-            }
-        ],
-        stream: false
-    };
-
-    try {
-        const response = await axios.post(url, data, {
-            headers: {
-                'Accept': "application/json",
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-                "Host": "api-knowledgebase.mlp.cn-beijing.volces.com"
-            }
-        });
-
-        if (response.status === 200) {
-            const data = response.data
-            const tokens = data.data.token_usage.llm_token_usage.total_tokens
-            updateTokensUsage(new Date().toISOString().split('T')[0], tokens)
-            return data.data.generated_answer;
-        } else {
-            console.log(`request_id=${response.headers['request_id']}`);
-            console.log(`code=${response.status}`);
-            console.log(`message=${response.data.message}`);
-        }
-    } catch (error) {
-        console.error(`Error calling KnowledgeBase: ${error.message}`);
-        if (error.response) {
-            console.error(`Response status: ${error.response.status}`);
-            console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
-        }
-    }
-    return '调用AI模型失败';
 }
 
 // 日志记录函数
@@ -351,7 +269,7 @@ wss.on('connection', (ws) => {
         id: connectionId,
         logFile: logFileName,
         history: [],
-        historyFormat: []
+        historyFormat: [],
     });
 
     console.log(`连接 ${connectionId} 已建立，日志文件: ${logFileName}`);
@@ -392,13 +310,13 @@ wss.on('connection', (ws) => {
                 };
                 history.push(newEntry);
                 historyFormat.push({
-                    role: "user",
+                    role: 'user',
                     content: userMessage
-                });
+                })
                 historyFormat.push({
-                    role: "assistant",
+                    role: 'assistant',
                     content: aiReply
-                });
+                })
                 console.log(`连接 ${connectionInfo.id} 对话历史已更新，当前共有 ${history.length} 条记录`);
 
                 // 解析火山引擎vikingdb知识库返回的插图标记
@@ -416,8 +334,14 @@ wss.on('connection', (ws) => {
                     return processedText;
                 }
 
+                function parseSignTag(text) {
+                    if (!text) return text;
+                    const signRegex = /<sign>/gi;
+                    return text.replace(signRegex, '<br><img src="shouhou_qrcode.jpg" alt="shouhou_qrcode" class="message-image"><br>');
+                }
+
                 // 解析AI回复中的插图标记
-                const processedReply = parseIllustrationTags(aiReply);
+                const processedReply = parseSignTag(parseIllustrationTags(aiReply));
 
                 // 记录聊天到连接专用日志
                 logChat(userMessage, processedReply, logFile);
@@ -512,32 +436,6 @@ app.get('/api/download-image/:sliceid', async (req, res) => {
         res.status(500).json({ error: '下载图片失败', message: error.message });
     }
 });
-
-// 读取tokens使用量数据
-const readTokensUsageData = () => {
-    try {
-        const data = fs.readFileSync(path.join(appRoot.path, 'data/tokens-usage.json'), 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('读取tokens使用量数据失败:', error);
-        return [];
-    }
-};
-
-// 保存tokens使用量数据
-const saveTokensUsageData = (data) => {
-    try {
-        const dataDir = path.join(appRoot.path, 'data');
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, { recursive: true });
-        }
-        fs.writeFileSync(path.join(dataDir, 'tokens-usage.json'), JSON.stringify(data, null, 2), 'utf8');
-        return true;
-    } catch (error) {
-        console.error('保存tokens使用量数据失败:', error);
-        return false;
-    }
-};
 
 // 确保data目录存在
 const dataDir = path.join(appRoot.path, 'data');
