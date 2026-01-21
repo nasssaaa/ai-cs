@@ -91,7 +91,7 @@ async function updateTokensUsage(date, tokens) {
 
 //ai应用调用函数
 async function getAiResponse(prompt, history) {
-    const appId = 'kb-service-538a0c10861f5de5'
+    const appId = 'kb-service-ba9238d019914937'
     const apiKey = 'afe01879-d881-45f6-bbb4-fc8a34390aa5'
 
     const url = `https://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/service/chat`;
