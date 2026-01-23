@@ -8,6 +8,7 @@ const axios = require('axios');
 const { Signer } = require('@volcengine/openapi');
 const appRoot = require('app-root-path');
 const { getAiResponse } = require('./api');
+const { readTokensUsageData } = require('./tokensMonitor')
 // 确保logs目录存在
 const logsDir = path.join(appRoot.path, 'logs');
 if (!fs.existsSync(logsDir)) {
