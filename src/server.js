@@ -5,55 +5,14 @@ const fs = require('fs');
 const WebSocket = require('ws');
 const http = require('http');
 const axios = require('axios');
-const { Signer } = require('@volcengine/openapi');
 const appRoot = require('app-root-path');
-const { getAiResponse } = require('./api');
+const { getAiResponse, getSliceUrl, getSliceId } = require('./api');
 const { readTokensUsageData } = require('./tokensMonitor')
 // 确保logs目录存在
 const logsDir = path.join(appRoot.path, 'logs');
 if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
     console.log('创建logs目录成功');
-}
-
-async function getSliceUrl(sliceId) {
-    const url = `https://api-knowledgebase.mlp.cn-beijing.volces.com/api/knowledge/point/info`;
-    const credentials = {
-        accessKeyId: 'AKLTZGE1YmU5OGI1OTM2NDgzOTk5ZjgyOTU3Y2UyNzAyMDc',
-        secretKey: 'TXpVeFl6STVPR1V4TjJSbU5HRTBaV0UxTmpabU16Um1aRGswTmprd056UQ=='
-    }
-    const body = {
-        point_id: sliceId,
-        resource_id: 'kb-a0cb294cc7d1cbf8',
-        get_attachment_link: true
-    }
-    const request = {
-        region: 'cn-beijing',
-        headers: {
-            'Accept': "application/json",
-            'Content-type': 'application/json',
-            'Host': 'api-knowledgebase.mlp.cn-beijing.volces.com'
-        },
-        method: 'POST',
-        body: JSON.stringify(body),
-        pathname: '/api/knowledge/point/info'
-    };
-    const signer = new Signer(request, 'air');
-    signer.addAuthorization(credentials);
-
-    try {
-        const response = await axios.post(url, body, {
-            headers: request.headers
-        });
-        return response.data.data.chunk_attachment[0].link
-    } catch (error) {
-        console.error(`Error calling KnowledgeBase: ${error.message}`);
-        if (error.response) {
-            console.error(`Response status: ${error.response.status}`);
-            console.error(`Response data: ${JSON.stringify(error.response.data, null, 2)}`);
-        }
-    }
-    return null;
 }
 
 // 日志记录函数
@@ -335,14 +294,15 @@ wss.on('connection', (ws) => {
                     return processedText;
                 }
 
-                function parseSignTag(text) {
+                async function parseSignTag(text) {
                     if (!text) return text;
                     const signRegex = /<sign>/gi;
-                    return text.replace(signRegex, '<br><img src="shouhou_qrcode.jpg" alt="shouhou_qrcode" class="message-image"><br>');
+                    const sliceId = await getSliceId('售后群');
+                    return text.replace(signRegex, `<br><img src="/api/download-image/${sliceId}" alt="${sliceId}" class="message-image"><br>`);
                 }
 
                 // 解析AI回复中的插图标记
-                const processedReply = parseSignTag(parseIllustrationTags(aiReply));
+                const processedReply = await parseSignTag(parseIllustrationTags(aiReply));
 
                 // 记录聊天到连接专用日志
                 logChat(userMessage, processedReply, logFile);
@@ -407,6 +367,16 @@ wss.on('connection', (ws) => {
         console.error('WebSocket错误:', error);
     });
 });
+
+app.post('/api/get-slice-id', async (req, res) => {
+    try {
+        const sliceId = await getSliceId(req.body.query);
+        res.json({ sliceId });
+    } catch (error) {
+        console.error('Error getting slice ID:', error);
+        res.status(500).json({ error: 'Failed to get slice ID' });
+    }
+})
 
 // 图片下载路由
 app.get('/api/download-image/:sliceid', async (req, res) => {
